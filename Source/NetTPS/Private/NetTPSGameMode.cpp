@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "NetTPSGameMode.h"
+
+#include "NetTPS.h"
 #include "NetTPSCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -12,4 +14,6 @@ ANetTPSGameMode::ANetTPSGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+
+	PRINTLOG(TEXT("%s"), TEXT("Hello World"))
 }

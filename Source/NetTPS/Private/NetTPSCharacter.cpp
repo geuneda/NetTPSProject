@@ -69,6 +69,7 @@ void ANetTPSCharacter::NotifyControllerChanged()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+	
 }
 
 void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
