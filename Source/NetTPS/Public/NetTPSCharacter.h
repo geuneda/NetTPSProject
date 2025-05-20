@@ -63,6 +63,8 @@ protected:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual void BeginPlay() override;
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -88,8 +90,20 @@ public:
 	UPROPERTY(EditAnywhere, Category=Gun)
 	float GetGunDistance = 200;
 
+	// 월드에 배치 된 총들
+	UPROPERTY()
+	TArray<AActor*> PistolActors;
+
 	void TakePistol(const struct FInputActionValue& Value);
 	// 총을 컴포넌트에 붙이는 함수
 	void AttachPistol(AActor* pistolActor);
+
+	/* 총 놓기 **/
+public:
+	// 입력 처리
+	UPROPERTY(EditDefaultsOnly, Category=Input)
+	class UInputAction* IA_ReleaseAction;
+	// 총 놓기 함수
+	void ReleasePistol(const struct FInputActionValue& Value);
 };
 

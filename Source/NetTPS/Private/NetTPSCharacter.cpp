@@ -65,6 +65,12 @@ ANetTPSCharacter::ANetTPSCharacter()
 	{
 		IA_TakePistol = tempIA.Object;
 	}
+
+	ConstructorHelpers::FObjectFinder<UInputAction> tempIA_R(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_ReleaseAction.IA_ReleaseAction'"));
+	if (tempIA_R.Succeeded())
+	{
+		IA_ReleaseAction = tempIA_R.Object;
+	}
 }
 
 // Input
@@ -100,11 +106,21 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ANetTPSCharacter::Look);
 
 		EnhancedInputComponent->BindAction(IA_TakePistol, ETriggerEvent::Started, this, &ANetTPSCharacter::TakePistol);
+
+		EnhancedInputComponent->BindAction(IA_ReleaseAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReleasePistol);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
+}
+
+void ANetTPSCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	PistolActors.Empty();
+	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), AActor::StaticClass(), FName(TEXT("Gun")), PistolActors);
 }
 
 void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
@@ -115,9 +131,7 @@ void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
 	if (bHasPistol) return;
 	
 	// 2. 범위 안에 총이 있어야 한다.
-	TArray<AActor*> allActors;
-	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), AActor::StaticClass(), FName(TEXT("Gun")), allActors);
-	for (auto gun : allActors)
+	for (auto gun : PistolActors)
 	{
 		if (gun->GetOwner() != nullptr)
 		{
@@ -146,6 +160,20 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 
 	meshComp->SetSimulatePhysics(false);
 	meshComp->AttachToComponent(GunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+}
+
+void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& Value)
+{
+	if (OwnedPistol && bHasPistol)
+	{
+		OwnedPistol->SetOwner(nullptr);
+		bHasPistol = false;
+
+		auto meshComp = OwnedPistol->GetComponentByClass<UStaticMeshComponent>();
+
+		meshComp->SetSimulatePhysics(true);
+		meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+	}
 }
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)
