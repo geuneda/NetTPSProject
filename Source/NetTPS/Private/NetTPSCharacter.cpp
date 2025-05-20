@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -57,10 +58,15 @@ ANetTPSCharacter::ANetTPSCharacter()
 	GunComp = CreateDefaultSubobject<USceneComponent>(TEXT("GunComp"));
 	GunComp->SetupAttachment(GetMesh(), TEXT("GunPosition"));
 	GunComp->SetRelativeLocation(FVector(-5.000000,-8.660254,-0.000000));
-	GunComp->SetRelativeRotation(FRotator(-0.000000, 0.000000, 60.000000));
+	GunComp->SetRelativeRotation(FRotator(0, 60, 0));
+
+	ConstructorHelpers::FObjectFinder<UInputAction> tempIA(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_TakePistol.IA_TakePistol'"));
+	if (tempIA.Succeeded())
+	{
+		IA_TakePistol = tempIA.Object;
+	}
 }
 
-//////////////////////////////////////////////////////////////////////////
 // Input
 
 void ANetTPSCharacter::NotifyControllerChanged()
@@ -92,11 +98,45 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ANetTPSCharacter::Look);
+
+		EnhancedInputComponent->BindAction(IA_TakePistol, ETriggerEvent::Started, this, &ANetTPSCharacter::TakePisotl);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
+}
+
+void ANetTPSCharacter::TakePisotl(const struct FInputActionValue& Value)
+{
+	// F 키를 눌렀을 때 호출되는 이벤트 콜백 함수
+	// 이미 총을 잡고 있지 않다면 일정 범위 안에 있는 총을 잡는다.
+	// 1. 총을 잡고 있지 않아야 한다.
+	if (bHasPistol) return;
+	
+	// 2. 범위 안에 총이 있어야 한다.
+	TArray<AActor*> allActors;
+	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), AActor::StaticClass(), FName(TEXT("Gun")), allActors);
+	for (auto gun : allActors)
+	{
+		if (gun->GetOwner() != nullptr)
+		{
+			continue;
+		}
+
+		if (GetDistanceTo(gun) > GetGunDistance)
+		{
+			continue;
+		}
+		
+		// 3. 총을 잡고싶다.
+		OwnedPistol = gun;
+		OwnedPistol->SetOwner(this);
+		bHasPistol = true;
+
+		break;
+	}
+	
 }
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)

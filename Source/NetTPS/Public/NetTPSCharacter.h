@@ -73,5 +73,21 @@ public:
 	// 총을 자식으로 붙일 컴포넌트
 	UPROPERTY(VisibleAnywhere)
 	class USceneComponent* GunComp;
+
+public:
+	// 총 잡기
+	UPROPERTY(EditAnywhere, Category=Input)
+	UInputAction* IA_TakePistol;
+
+	// 필요속성 : 총 소유 여부, 소유중인 총, 총 검색 범위
+	bool bHasPistol = false;
+
+	UPROPERTY()
+	AActor* OwnedPistol = nullptr;
+
+	UPROPERTY(EditAnywhere, Category=Gun)
+	float GetGunDistance = 200;
+
+	void TakePisotl(const struct FInputActionValue& Value);
 };
 
