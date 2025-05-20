@@ -68,5 +68,10 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+public:
+	// 총을 자식으로 붙일 컴포넌트
+	UPROPERTY(VisibleAnywhere)
+	class USceneComponent* GunComp;
 };
 
