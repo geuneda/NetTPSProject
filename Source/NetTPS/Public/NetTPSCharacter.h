@@ -88,6 +88,8 @@ public:
 	UPROPERTY(EditAnywhere, Category=Gun)
 	float GetGunDistance = 200;
 
-	void TakePisotl(const struct FInputActionValue& Value);
+	void TakePistol(const struct FInputActionValue& Value);
+	// 총을 컴포넌트에 붙이는 함수
+	void AttachPistol(AActor* pistolActor);
 };
 

@@ -99,7 +99,7 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ANetTPSCharacter::Look);
 
-		EnhancedInputComponent->BindAction(IA_TakePistol, ETriggerEvent::Started, this, &ANetTPSCharacter::TakePisotl);
+		EnhancedInputComponent->BindAction(IA_TakePistol, ETriggerEvent::Started, this, &ANetTPSCharacter::TakePistol);
 	}
 	else
 	{
@@ -107,7 +107,7 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
-void ANetTPSCharacter::TakePisotl(const struct FInputActionValue& Value)
+void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
 {
 	// F 키를 눌렀을 때 호출되는 이벤트 콜백 함수
 	// 이미 총을 잡고 있지 않다면 일정 범위 안에 있는 총을 잡는다.
@@ -134,9 +134,18 @@ void ANetTPSCharacter::TakePisotl(const struct FInputActionValue& Value)
 		OwnedPistol->SetOwner(this);
 		bHasPistol = true;
 
+		AttachPistol(gun);
 		break;
 	}
 	
+}
+
+void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
+{
+	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
+
+	meshComp->SetSimulatePhysics(false);
+	meshComp->AttachToComponent(GunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 }
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)
