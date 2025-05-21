@@ -14,6 +14,8 @@ class NETTPS_API UNetPlayerAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 
+	UNetPlayerAnimInstance();
+
 public:
 	UPROPERTY()
 	class ANetTPSCharacter* Player;
@@ -28,7 +30,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MyAnimSettings")
 	float Speed;
 
+	// 총 쏘기 몽타주
+	UPROPERTY(EditDefaultsOnly, Category=Montage)
+	UAnimMontage* FireMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Montage)
+	float FireMontageRate = 1.f;
+
 public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeInitializeAnimation() override;
+
+	// 총쏘기 애니메이션 재생 함수
+	void PlayFireAnimation();
 };

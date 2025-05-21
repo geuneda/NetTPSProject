@@ -5,6 +5,15 @@
 
 #include "NetTPSCharacter.h"
 
+UNetPlayerAnimInstance::UNetPlayerAnimInstance()
+{
+	ConstructorHelpers::FObjectFinder<UAnimMontage> FireAnimMontage(TEXT("/Script/Engine.AnimMontage'/Game/Net/Animations/AM_Pistol_Fire_Montage.AM_Pistol_Fire_Montage'"));
+	if (FireAnimMontage.Succeeded())
+	{
+		FireMontage = FireAnimMontage.Object;
+	}
+}
+
 void UNetPlayerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
@@ -27,3 +36,12 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 }
 
+void UNetPlayerAnimInstance::PlayFireAnimation()
+{
+	if (!bHasPistol) return;
+
+	if (FireMontage)
+	{
+		Montage_Play(FireMontage, FireMontageRate);
+	}
+}

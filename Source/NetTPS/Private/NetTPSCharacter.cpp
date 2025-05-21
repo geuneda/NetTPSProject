@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "NetPlayerAnimInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 
@@ -197,6 +198,7 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& Value)
 {
 	// 총이 없으면 발사 x
 	if (!bHasPistol) return;
+	
 	// 총쏘기 -> Line Trace
 	FVector Start = FollowCamera->GetComponentLocation();
 	FVector End = Start + FollowCamera->GetForwardVector() * 10000;
@@ -212,6 +214,12 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& Value)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, OutHit.ImpactPoint, FRotator(0, 0, 0));
 		// 파티클 출력
+	}
+
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayFireAnimation();
 	}
 }
 
