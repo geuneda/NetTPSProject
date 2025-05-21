@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "Particles/ParticleSystem.h"
 #include "NetTPSCharacter.generated.h"
 
 class USpringArmComponent;
@@ -102,8 +103,20 @@ public:
 public:
 	// 입력 처리
 	UPROPERTY(EditDefaultsOnly, Category=Input)
-	class UInputAction* IA_ReleaseAction;
+	UInputAction* IA_ReleaseAction;
 	// 총 놓기 함수
 	void ReleasePistol(const struct FInputActionValue& Value);
+
+public:
+	// 총쏘기
+	UPROPERTY(EditDefaultsOnly, Category=Input)
+	UInputAction* IA_FireAction;
+
+	// 총 쏘기 처리 함수
+	void Fire(const struct FInputActionValue& Value);
+
+	// 파티클
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UParticleSystem> HitParticle;
 };
 

@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystem.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -71,6 +72,18 @@ ANetTPSCharacter::ANetTPSCharacter()
 	{
 		IA_ReleaseAction = tempIA_R.Object;
 	}
+
+	ConstructorHelpers::FObjectFinder<UInputAction> tempIA_F(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_FireAction.IA_FireAction'"));
+	if (tempIA_F.Succeeded())
+	{
+		IA_FireAction = tempIA_F.Object;
+	}
+
+	ConstructorHelpers::FObjectFinder<UParticleSystem> tempPaticle(TEXT("/Script/Engine.ParticleSystem'/Game/StarterContent/Particles/P_Explosion.P_Explosion'"));
+	if (tempPaticle.Succeeded())
+	{
+		HitParticle = tempPaticle.Object;
+	}
 }
 
 // Input
@@ -108,6 +121,8 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(IA_TakePistol, ETriggerEvent::Started, this, &ANetTPSCharacter::TakePistol);
 
 		EnhancedInputComponent->BindAction(IA_ReleaseAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReleasePistol);
+
+		EnhancedInputComponent->BindAction(IA_FireAction, ETriggerEvent::Started, this, &ANetTPSCharacter::Fire);
 	}
 	else
 	{
@@ -133,6 +148,8 @@ void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
 	// 2. 범위 안에 총이 있어야 한다.
 	for (auto gun : PistolActors)
 	{
+		if (!IsValid(gun))return;
+		
 		if (gun->GetOwner() != nullptr)
 		{
 			continue;
@@ -173,6 +190,28 @@ void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& Value)
 
 		meshComp->SetSimulatePhysics(true);
 		meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+	}
+}
+
+void ANetTPSCharacter::Fire(const struct FInputActionValue& Value)
+{
+	// 총이 없으면 발사 x
+	if (!bHasPistol) return;
+	// 총쏘기 -> Line Trace
+	FVector Start = FollowCamera->GetComponentLocation();
+	FVector End = Start + FollowCamera->GetForwardVector() * 10000;
+	FHitResult OutHit;
+	FCollisionQueryParams Parms;
+	Parms.AddIgnoredActor(this);
+	
+	bool bHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility,Parms);
+	
+	// 피격 시 파티클 출력
+
+	if (bHit)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, OutHit.ImpactPoint, FRotator(0, 0, 0));
+		// 파티클 출력
 	}
 }
 
