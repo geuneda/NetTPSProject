@@ -21,13 +21,13 @@ public:
 	class ANetTPSCharacter* Player;
 	
 	// 총을 소지하고 있는지 여부
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MyAnimSettings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
 	bool bHasPistol = false;
 	
 	// 방향 변수 등록
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MyAnimSettings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
 	float Direction;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MyAnimSettings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
 	float Speed;
 
 	// 총 쏘기 몽타주
@@ -36,9 +36,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Montage)
 	float FireMontageRate = 1.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
+	float PitchAngle;
+
 public:
-	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeInitializeAnimation() override;
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 	// 총쏘기 애니메이션 재생 함수
 	void PlayFireAnimation();

@@ -33,6 +33,10 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Direction = FVector::DotProduct(vel, Player->GetActorRightVector());
 
 		bHasPistol = Player->bHasPistol;
+
+		// 회전값 가져오기
+		PitchAngle = -Player->GetBaseAimRotation().GetNormalized().Pitch;
+		PitchAngle = FMath::Clamp(PitchAngle, -60.f, 60.f);
 	}
 }
 
