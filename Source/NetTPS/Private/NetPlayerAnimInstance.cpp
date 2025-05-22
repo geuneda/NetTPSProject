@@ -7,10 +7,17 @@
 
 UNetPlayerAnimInstance::UNetPlayerAnimInstance()
 {
-	ConstructorHelpers::FObjectFinder<UAnimMontage> FireAnimMontage(TEXT("/Script/Engine.AnimMontage'/Game/Net/Animations/AM_Pistol_Fire_Montage.AM_Pistol_Fire_Montage'"));
+	ConstructorHelpers::FObjectFinder<UAnimMontage> FireAnimMontage(
+		TEXT("/Script/Engine.AnimMontage'/Game/Net/Animations/AM_Pistol_Fire_Montage.AM_Pistol_Fire_Montage'"));
 	if (FireAnimMontage.Succeeded())
 	{
 		FireMontage = FireAnimMontage.Object;
+	}
+	ConstructorHelpers::FObjectFinder<UAnimMontage> ReloadAnimMontage(
+		TEXT("/Script/Engine.AnimMontage'/Game/Net/Animations/AM_Pistol_Reload_Montage.AM_Pistol_Reload_Montage'"));
+	if (ReloadAnimMontage.Succeeded())
+	{
+		ReloadMontage = ReloadAnimMontage.Object;
 	}
 }
 
@@ -31,7 +38,6 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		FVector vel = Player->GetVelocity();
 		Speed = FVector::DotProduct(vel, Player->GetActorForwardVector());
 		Direction = FVector::DotProduct(vel, Player->GetActorRightVector());
-
 		bHasPistol = Player->bHasPistol;
 
 		// 회전값 가져오기
@@ -48,4 +54,19 @@ void UNetPlayerAnimInstance::PlayFireAnimation()
 	{
 		Montage_Play(FireMontage, FireMontageRate);
 	}
+}
+
+void UNetPlayerAnimInstance::PlayReloadAnimation()
+{
+	if (!bHasPistol) return;
+
+	if (ReloadMontage)
+	{
+		Montage_Play(ReloadMontage, ReloadMontageRate);
+	}
+}
+
+void UNetPlayerAnimInstance::AnimNotify_OnReloadFinish()
+{
+	Player->InitBulletUI();
 }

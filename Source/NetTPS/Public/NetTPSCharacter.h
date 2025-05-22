@@ -134,5 +134,18 @@ public:
 	
 	// UI 초기화 함수
 	void InitUI();
+
+public: // 재장전
+	UPROPERTY(EditDefaultsOnly, Category=Input)
+	class UInputAction* IA_Reload;
+
+	// 재장전 중인지 여부
+	bool bIsReloading = false;
+	
+	void ReloadPistol(const struct FInputActionValue& Value);
+	void StopMontagesAndResetReload();
+
+	// 총알 UI 초기화 함수
+	void InitBulletUI();
 };
 

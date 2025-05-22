@@ -81,6 +81,12 @@ ANetTPSCharacter::ANetTPSCharacter()
 		IA_FireAction = tempIA_F.Object;
 	}
 
+	ConstructorHelpers::FObjectFinder<UInputAction> tempIA_Reload(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_Reload.IA_Reload'"));
+	if (tempIA_Reload.Succeeded())
+	{
+		IA_Reload = tempIA_Reload.Object;
+	}
+
 	ConstructorHelpers::FObjectFinder<UParticleSystem> tempPaticle(TEXT("/Script/Engine.ParticleSystem'/Game/StarterContent/Particles/P_Explosion.P_Explosion'"));
 	if (tempPaticle.Succeeded())
 	{
@@ -131,6 +137,8 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(IA_ReleaseAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReleasePistol);
 
 		EnhancedInputComponent->BindAction(IA_FireAction, ETriggerEvent::Started, this, &ANetTPSCharacter::Fire);
+
+		EnhancedInputComponent->BindAction(IA_Reload, ETriggerEvent::Started, this, &ANetTPSCharacter::ReloadPistol);
 	}
 	else
 	{
@@ -161,6 +169,29 @@ void ANetTPSCharacter::InitUI()
 	{
 		MainUI->AddBullet();
 	}
+}
+
+void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& Value)
+{
+	if (!bHasPistol || bIsReloading) return;
+
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim) anim->PlayReloadAnimation();
+
+	bIsReloading = true;
+}
+
+void ANetTPSCharacter::InitBulletUI()
+{
+	BulletCount = MaxBulletCount;
+	MainUI->RemoveAllBullet();
+
+	for (int i = 0; i < MaxBulletCount; i++)
+	{
+		MainUI->AddBullet();
+	}
+
+	bIsReloading = false;
 }
 
 void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
@@ -205,10 +236,20 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 	meshComp->AttachToComponent(GunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 }
 
+void ANetTPSCharacter::StopMontagesAndResetReload()
+{
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim) anim->StopAllMontages(0.1f);
+	bIsReloading = false;
+}
+
 void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& Value)
 {
 	if (OwnedPistol && bHasPistol)
 	{
+		// 몽타주 취소 및 재장전 취소
+		StopMontagesAndResetReload();
+		
 		OwnedPistol->SetOwner(nullptr);
 		bHasPistol = false;
 		MainUI->ShowCrosshair(bHasPistol);
@@ -223,7 +264,7 @@ void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& Value)
 void ANetTPSCharacter::Fire(const struct FInputActionValue& Value)
 {
 	// 총이 없으면 발사 x
-	if (!bHasPistol || BulletCount <= 0) return;
+	if (!bHasPistol || BulletCount <= 0 || bIsReloading) return;
 	
 	// 총쏘기 -> Line Trace
 	FVector Start = FollowCamera->GetComponentLocation();

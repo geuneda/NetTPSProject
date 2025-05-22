@@ -39,10 +39,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
 	float PitchAngle;
 
+	// 재장전 몽타주
+	UPROPERTY(EditDefaultsOnly, Category=Montage)
+	UAnimMontage* ReloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Montage)
+	float ReloadMontageRate = 1.f;
+
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 	// 총쏘기 애니메이션 재생 함수
 	void PlayFireAnimation();
+
+	// 재장전 애니메이션 재생 함수
+	void PlayReloadAnimation();
+	// 재장전 애니메이션 노티파이 콜백 처리 함수
+	UFUNCTION()
+	void AnimNotify_OnReloadFinish();
+	
 };

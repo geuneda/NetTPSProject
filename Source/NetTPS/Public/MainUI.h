@@ -36,4 +36,6 @@ public:
 	void AddBullet();
 	// 총알 하나씩 제거하는 함수
 	void PopBullet(int32 index);
+	// 모든 총알 UI 제거
+	void RemoveAllBullet();
 };

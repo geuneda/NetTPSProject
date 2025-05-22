@@ -31,3 +31,8 @@ void UMainUI::PopBullet(int32 index)
 {
 	BulletPanel->RemoveChildAt(index);
 }
+
+void UMainUI::RemoveAllBullet()
+{
+	BulletPanel->ClearChildren();
+}
