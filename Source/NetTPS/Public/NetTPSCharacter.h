@@ -118,5 +118,14 @@ public:
 	// 파티클
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UParticleSystem> HitParticle;
+
+	public:/** UI */
+	UPROPERTY(EditDefaultsOnly, Category=UI)
+	TSubclassOf<class UMainUI> MainUIWidget;
+	UPROPERTY()
+	class UMainUI* MainUI;
+
+	// UI 초기화 함수
+	void InitUI();
 };
 

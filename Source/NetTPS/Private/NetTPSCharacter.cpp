@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
@@ -85,6 +86,12 @@ ANetTPSCharacter::ANetTPSCharacter()
 	{
 		HitParticle = tempPaticle.Object;
 	}
+
+	ConstructorHelpers::FClassFinder<UMainUI> tempUI(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Net/UI/WBP_MainUI.WBP_MainUI_C'"));
+	if (tempUI.Succeeded())
+	{
+		MainUIWidget = tempUI.Class;
+	}
 }
 
 // Input
@@ -137,6 +144,14 @@ void ANetTPSCharacter::BeginPlay()
 	
 	PistolActors.Empty();
 	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), AActor::StaticClass(), FName(TEXT("Gun")), PistolActors);
+
+	InitUI();
+}
+
+void ANetTPSCharacter::InitUI()
+{
+	MainUI = Cast<UMainUI>(CreateWidget<UMainUI>(GetWorld(), MainUIWidget));
+	MainUI->AddToViewport();
 }
 
 void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
