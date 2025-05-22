@@ -13,4 +13,12 @@ UCLASS()
 class NETTPS_API UMainUI : public UUserWidget
 {
 	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(meta=(BindWidget))
+	class UImage* Image_Crosshair;
+
+	// 크로스헤어 Show/Hide
+	void ShowCrosshair(bool bShow);
 };

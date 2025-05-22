@@ -146,6 +146,7 @@ void ANetTPSCharacter::BeginPlay()
 	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), AActor::StaticClass(), FName(TEXT("Gun")), PistolActors);
 
 	InitUI();
+	MainUI->ShowCrosshair(bHasPistol);
 }
 
 void ANetTPSCharacter::InitUI()
@@ -180,6 +181,7 @@ void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
 		OwnedPistol = gun;
 		OwnedPistol->SetOwner(this);
 		bHasPistol = true;
+		MainUI->ShowCrosshair(bHasPistol);
 
 		AttachPistol(gun);
 		break;
@@ -201,6 +203,7 @@ void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& Value)
 	{
 		OwnedPistol->SetOwner(nullptr);
 		bHasPistol = false;
+		MainUI->ShowCrosshair(bHasPistol);
 
 		auto meshComp = OwnedPistol->GetComponentByClass<UStaticMeshComponent>();
 

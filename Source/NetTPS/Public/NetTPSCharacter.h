@@ -124,7 +124,7 @@ public:
 	TSubclassOf<class UMainUI> MainUIWidget;
 	UPROPERTY()
 	class UMainUI* MainUI;
-
+	
 	// UI 초기화 함수
 	void InitUI();
 };
