@@ -12,6 +12,7 @@
 #include "InputActionValue.h"
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
+#include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 
@@ -62,6 +63,9 @@ ANetTPSCharacter::ANetTPSCharacter()
 	GunComp->SetupAttachment(GetMesh(), TEXT("GunPosition"));
 	GunComp->SetRelativeLocation(FVector(-5.000000,-8.660254,-0.000000));
 	GunComp->SetRelativeRotation(FRotator(0, 60, 0));
+
+	HPUIComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPUIComp"));
+	HPUIComp->SetupAttachment(GetMesh());
 
 	ConstructorHelpers::FObjectFinder<UInputAction> tempIA(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_TakePistol.IA_TakePistol'"));
 	if (tempIA.Succeeded())

@@ -28,6 +28,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bullet)
 	TSubclassOf<class UUserWidget> BulletUIFactory;
+
+	UPROPERTY(BlueprintReadOnly, Category = HP)
+	float HP = 1.f;
 public:
 	// 크로스헤어 Show/Hide
 	void ShowCrosshair(bool bShow);

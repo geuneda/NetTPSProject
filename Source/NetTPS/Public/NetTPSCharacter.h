@@ -147,5 +147,13 @@ public: // 재장전
 
 	// 총알 UI 초기화 함수
 	void InitBulletUI();
+
+public: // 플레이어 체력
+	UPROPERTY(EditDefaultsOnly, Category=HP)
+	float MaxHP = 3;
+	float CurHP = MaxHP;
+
+	UPROPERTY(VisibleAnywhere, Category=HP)
+	class UWidgetComponent* HPUIComp;
 };
 
