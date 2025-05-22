@@ -151,8 +151,16 @@ void ANetTPSCharacter::BeginPlay()
 
 void ANetTPSCharacter::InitUI()
 {
+	if (!MainUIWidget) return;
 	MainUI = Cast<UMainUI>(CreateWidget<UMainUI>(GetWorld(), MainUIWidget));
 	MainUI->AddToViewport();
+
+	BulletCount = MaxBulletCount;
+
+	for (int i = 0; i < MaxBulletCount; i++)
+	{
+		MainUI->AddBullet();
+	}
 }
 
 void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
@@ -215,7 +223,7 @@ void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& Value)
 void ANetTPSCharacter::Fire(const struct FInputActionValue& Value)
 {
 	// 총이 없으면 발사 x
-	if (!bHasPistol) return;
+	if (!bHasPistol || BulletCount <= 0) return;
 	
 	// 총쏘기 -> Line Trace
 	FVector Start = FollowCamera->GetComponentLocation();
@@ -239,6 +247,10 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& Value)
 	{
 		anim->PlayFireAnimation();
 	}
+
+	// 총알 제거
+	BulletCount--;
+	MainUI->PopBullet(BulletCount);
 }
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)

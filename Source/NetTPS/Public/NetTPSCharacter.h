@@ -124,6 +124,13 @@ public:
 	TSubclassOf<class UMainUI> MainUIWidget;
 	UPROPERTY()
 	class UMainUI* MainUI;
+
+	// 최대 총알 개수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bullet)
+	int32 MaxBulletCount = 10;
+	// 남은 총알 개수
+	int32 BulletCount = MaxBulletCount;
+	
 	
 	// UI 초기화 함수
 	void InitUI();
