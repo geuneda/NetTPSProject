@@ -153,10 +153,19 @@ public: // 플레이어 체력
 	float MaxHP = 3;
 	float CurHP = MaxHP;
 
+	// HP 프로퍼티
+	__declspec(property(get = GetHP, put = SetHP)) float HP;
+	
+	float GetHP() const { return CurHP; }
+	void SetHP(float value);
+
 	UPROPERTY(VisibleAnywhere, Category=HP)
 	class UWidgetComponent* HPUIComp;
 
 public: // 피격 처리
 	void DamageProcess();
+
+public: // 죽음 처리
+	bool bIsDead = false;
 };
 

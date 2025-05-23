@@ -39,6 +39,7 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Speed = FVector::DotProduct(vel, Player->GetActorForwardVector());
 		Direction = FVector::DotProduct(vel, Player->GetActorRightVector());
 		bHasPistol = Player->bHasPistol;
+		bIsDead = Player->bIsDead;
 		
 		// 회전값 가져오기
 		PitchAngle = -Player->GetBaseAimRotation().GetNormalized().Pitch;

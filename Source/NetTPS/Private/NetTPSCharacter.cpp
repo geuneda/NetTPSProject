@@ -334,8 +334,14 @@ void ANetTPSCharacter::Move(const FInputActionValue& Value)
 
 void ANetTPSCharacter::DamageProcess()
 {
-	CurHP--;
+	HP--;
+	if (HP <= 0) bIsDead = true;
+}
 
+void ANetTPSCharacter::SetHP(float value)
+{
+	CurHP = value;
+	
 	// UI 업데이트
 	float percent = CurHP / MaxHP;
 	// 나일경우는 Main UI HP를 갱신
@@ -354,8 +360,6 @@ void ANetTPSCharacter::DamageProcess()
 			hpUI->HP = percent;
 		}
 	}
-
-	
 }
 
 void ANetTPSCharacter::Look(const FInputActionValue& Value)

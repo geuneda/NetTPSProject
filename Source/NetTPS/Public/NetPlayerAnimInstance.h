@@ -23,6 +23,9 @@ public:
 	// 총을 소지하고 있는지 여부
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
 	bool bHasPistol;
+	// 죽었는지 상태 여부
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
+	bool bIsDead;
 	
 	// 방향 변수 등록
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
