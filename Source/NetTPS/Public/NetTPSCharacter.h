@@ -62,10 +62,13 @@ protected:
 
 	virtual void NotifyControllerChanged() override;
 
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void BeginPlay() override;
 
+	virtual void Tick(float DeltaSeconds) override;
+	
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -167,5 +170,10 @@ public: // 피격 처리
 
 public: // 죽음 처리
 	bool bIsDead = false;
+
+public: // Network
+
+	// 네트워크 상태로그 출력 함수
+	void PrintNetLog();
 };
 

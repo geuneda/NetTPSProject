@@ -13,6 +13,7 @@
 #include "InputActionValue.h"
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
+#include "NetTPS.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
@@ -373,4 +374,25 @@ void ANetTPSCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+/* Network **/
+
+void ANetTPSCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	PrintNetLog();
+}
+
+void ANetTPSCharacter::PrintNetLog()
+{
+    // 네트워크 상태 로그 출력
+	const FString conStr = GetNetConnection() != nullptr ? TEXT("Valid Connection") : TEXT(" InValid Connection");
+	// Owner 출력
+	const FString ownerName = GetOwner() ? GetOwner()->GetName() : TEXT(" No Owner");
+	
+	const FString conStr2 = FString::Printf(TEXT("Owner: %s\nConnection: %s\nLocal Role: %s\nRemote Role: %s"), *ownerName, *conStr, *LOCALROLE, *REMOTEROLE);
+	
+	DrawDebugString(GetWorld(), GetActorLocation(), conStr2, nullptr, FColor::Yellow, 0, true, 1);
 }
