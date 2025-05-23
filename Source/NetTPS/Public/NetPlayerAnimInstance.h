@@ -22,7 +22,7 @@ public:
 	
 	// 총을 소지하고 있는지 여부
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
-	bool bHasPistol = false;
+	bool bHasPistol;
 	
 	// 방향 변수 등록
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)

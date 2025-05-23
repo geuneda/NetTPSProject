@@ -9,6 +9,7 @@
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "HealthBar.h"
 #include "InputActionValue.h"
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
@@ -158,14 +159,18 @@ void ANetTPSCharacter::BeginPlay()
 	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), AActor::StaticClass(), FName(TEXT("Gun")), PistolActors);
 
 	InitUI();
-	MainUI->ShowCrosshair(bHasPistol);
 }
 
 void ANetTPSCharacter::InitUI()
 {
+	// 내 캐릭터일 때만 MainUI 생성
+	auto pc = Cast<APlayerController>(Controller);
+	if (!pc) return;
+	
 	if (!MainUIWidget) return;
 	MainUI = Cast<UMainUI>(CreateWidget<UMainUI>(GetWorld(), MainUIWidget));
 	MainUI->AddToViewport();
+	MainUI->ShowCrosshair(bHasPistol);
 
 	BulletCount = MaxBulletCount;
 
@@ -283,8 +288,14 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& Value)
 
 	if (bHit)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, OutHit.ImpactPoint, FRotator(0, 0, 0));
 		// 파티클 출력
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, OutHit.ImpactPoint, FRotator(0, 0, 0));
+
+		// 데미지 처리
+		if (auto target = Cast<ANetTPSCharacter>(OutHit.GetActor()))
+		{
+			target->DamageProcess();
+		}
 	}
 
 	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
@@ -319,6 +330,32 @@ void ANetTPSCharacter::Move(const FInputActionValue& Value)
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
+}
+
+void ANetTPSCharacter::DamageProcess()
+{
+	CurHP--;
+
+	// UI 업데이트
+	float percent = CurHP / MaxHP;
+	// 나일경우는 Main UI HP를 갱신
+	// 나일 경우만 MainUI를 생성함
+	if (MainUI)
+	{
+		MainUI->HP = percent;
+	}
+	// 상대방일 경우는 HPUIComp의 UI를 갱신
+	else
+	{
+		auto hpUI = Cast<UHealthBar>(HPUIComp->GetWidget());
+
+		if (hpUI)
+		{
+			hpUI->HP = percent;
+		}
+	}
+
+	
 }
 
 void ANetTPSCharacter::Look(const FInputActionValue& Value)

@@ -155,5 +155,8 @@ public: // 플레이어 체력
 
 	UPROPERTY(VisibleAnywhere, Category=HP)
 	class UWidgetComponent* HPUIComp;
+
+public: // 피격 처리
+	void DamageProcess();
 };
 
