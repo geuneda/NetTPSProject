@@ -49,5 +49,9 @@ public: // ------------회전 동기화 처리
 	
 	float RotSpeed = 50;
 
+	// 부드럽게 회전 보간 하기 위한 변수
+	float CurrentTime = 0;
+	float LastTime = 0;
+
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

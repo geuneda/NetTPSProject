@@ -27,6 +27,9 @@ ANetActor::ANetActor()
 
 	// 서버와 동기화 할지 여부
 	bReplicates = true;
+
+	// 대역폭 조정
+	SetNetUpdateFrequency(1.0f);
 }
 
 // Called when the game starts or when spawned
@@ -40,6 +43,10 @@ void ANetActor::OnRep_RotYaw()
 	FRotator newRot = GetActorRotation();
 	newRot.Yaw = RotYaw;
 	SetActorRotation(newRot);
+
+	// 업데이트된 경과시간 저장
+	LastTime = CurrentTime;
+	CurrentTime = 0;
 }
 
 // 서버에서 동기화 할 속성을 작성
@@ -96,6 +103,25 @@ void ANetActor::Tick(float DeltaTime)
 	{
 		AddActorLocalRotation(FRotator(0, RotSpeed * DeltaTime, 0));
 		RotYaw = GetActorRotation().Yaw;
+	}
+	else
+	{
+		// 네트워크 지연이 생기면 끊김 현상이 생긴다.
+		// 이를 보간처리
+
+		// 1. t를 구해야함
+		CurrentTime += DeltaTime;
+		// LastTime 유효성 검증
+		if (LastTime < KINDA_SMALL_NUMBER) return;
+		float t = CurrentTime / LastTime;
+		
+		// 2. 회전
+		// R = R0 + vt (+ Lerp)
+		float newYaw = RotYaw + RotSpeed * LastTime;
+		float lerpYaw = FMath::Lerp(RotYaw, newYaw, t);
+		// RotYaw = 시작점, newYaw = 끝점, t = 보간할 비율
+
+		SetActorRotation(FRotator(0, lerpYaw, 0));
 	}
 }
 
