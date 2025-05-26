@@ -185,8 +185,7 @@ void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& Value)
 {
 	if (!bHasPistol || bIsReloading) return;
 
-	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
-	if (anim) anim->PlayReloadAnimation();
+	if (auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance())) anim->PlayReloadAnimation();
 
 	bIsReloading = true;
 }

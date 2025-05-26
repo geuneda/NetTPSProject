@@ -6,6 +6,7 @@
 #include "NetTPS.h"
 #include "NetTPSCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
@@ -32,7 +33,14 @@ ANetActor::ANetActor()
 void ANetActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+}
+
+// 서버에서 동기화 할 속성을 작성
+void ANetActor::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ANetActor, RotYaw);
 }
 
 void ANetActor::FindAndSetNearestOwner()
@@ -75,6 +83,20 @@ void ANetActor::Tick(float DeltaTime)
 
 	// 검출 영역 시각화
 	DrawDebugSphere(GetWorld(), GetActorLocation(), SearchRadius, 30, FColor::Red, false, 0, 0, 1);
+
+	// if (서버일때만) 회전 처리
+	if (HasAuthority())
+	{
+		AddActorLocalRotation(FRotator(0, RotSpeed * DeltaTime, 0));
+		RotYaw = GetActorRotation().Yaw;
+	}
+	// 클라이언트에서 바뀐 값을 받음
+	else
+	{
+		FRotator newRot = GetActorRotation();
+		newRot.Yaw = RotYaw;
+		SetActorRotation(newRot);
+	}
 }
 
 void ANetActor::PrintNetLog()

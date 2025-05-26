@@ -39,4 +39,10 @@ public:
 	float curDis = 0.f;
 	float nearDis = 0.f;
 
+public: // ------------회전 동기화 처리
+	UPROPERTY(Replicated)
+	float RotYaw = 0;
+	float RotSpeed = 50;
+
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };
