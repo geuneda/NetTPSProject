@@ -52,6 +52,15 @@ public: // ------------회전 동기화 처리
 	// 부드럽게 회전 보간 하기 위한 변수
 	float CurrentTime = 0;
 	float LastTime = 0;
-
+public: // 재질 동기화를 위한 속성
+	UPROPERTY()
+	class UMaterialInstanceDynamic* Mat;
+	// 재질에 동기화 될 색상
+	UPROPERTY(ReplicatedUsing = OnRep_ChangeMatColor)
+	FLinearColor MatColor;
+	UFUNCTION()
+	void OnRep_ChangeMatColor();
+	
+public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

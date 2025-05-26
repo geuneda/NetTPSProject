@@ -29,13 +29,38 @@ ANetActor::ANetActor()
 	bReplicates = true;
 
 	// 대역폭 조정
-	SetNetUpdateFrequency(1.0f);
+	//SetNetUpdateFrequency(1.0f);
 }
 
 // Called when the game starts or when spawned
 void ANetActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	Mat = MeshComp->CreateDynamicMaterialInstance(0);
+	// 타이머를 이용해서 색상을 랜덤으로 일정시간에 한번씩 랜덤으로 변경시켜주자.
+	if (HasAuthority())
+	{
+		FTimerHandle timerHandle;
+		GetWorldTimerManager().SetTimer(timerHandle, [&]()
+		{
+			MatColor = FLinearColor::MakeRandomColor();
+			// 서버에서도 적용
+			OnRep_ChangeMatColor();
+		},
+		1.f,
+		true);
+	}
+}
+
+// MatColor가 네트워크에서 변경됐을 때 호출되는 콜백함수
+// -> 클라에서만 호출되는 함수
+void ANetActor::OnRep_ChangeMatColor()
+{
+	if (Mat)
+	{
+		Mat->SetVectorParameterValue(TEXT("FloorColor"), MatColor);
+	}
 }
 
 void ANetActor::OnRep_RotYaw()
@@ -55,6 +80,7 @@ void ANetActor::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ANetActor, RotYaw);
+	DOREPLIFETIME(ANetActor, MatColor);
 }
 
 void ANetActor::FindAndSetNearestOwner()
