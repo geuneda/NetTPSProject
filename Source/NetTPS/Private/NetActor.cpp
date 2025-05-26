@@ -35,6 +35,13 @@ void ANetActor::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ANetActor::OnRep_RotYaw()
+{
+	FRotator newRot = GetActorRotation();
+	newRot.Yaw = RotYaw;
+	SetActorRotation(newRot);
+}
+
 // 서버에서 동기화 할 속성을 작성
 void ANetActor::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -89,13 +96,6 @@ void ANetActor::Tick(float DeltaTime)
 	{
 		AddActorLocalRotation(FRotator(0, RotSpeed * DeltaTime, 0));
 		RotYaw = GetActorRotation().Yaw;
-	}
-	// 클라이언트에서 바뀐 값을 받음
-	else
-	{
-		FRotator newRot = GetActorRotation();
-		newRot.Yaw = RotYaw;
-		SetActorRotation(newRot);
 	}
 }
 

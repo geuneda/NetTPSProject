@@ -40,8 +40,13 @@ public:
 	float nearDis = 0.f;
 
 public: // ------------회전 동기화 처리
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_RotYaw) // 변경 됐을 때 OnRep_RotYaw 함수를 호출
 	float RotYaw = 0;
+
+	// RotYaw가 변경 됐을 때 호출되는 이벤트 함수
+	UFUNCTION()
+	void OnRep_RotYaw();
+	
 	float RotSpeed = 50;
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
