@@ -14,40 +14,38 @@ class NETTPS_API UNetPlayerAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 
-	UNetPlayerAnimInstance();
-
 public:
-	UPROPERTY()
-	class ANetTPSCharacter* Player;
+	UNetPlayerAnimInstance();
 	
-	// 총을 소지하고 있는지 여부
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
-	bool bHasPistol;
-	// 죽었는지 상태 여부
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
-	bool bIsDead;
-	
+public:
+	// 총을 소지하고 있는지 여부 속성
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=MyAnimSettings)
+	bool bHasPistol = false;
+
 	// 방향 변수 등록
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
-	float Direction;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
-	float Speed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=MyAnimSettings)
+	float direction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=MyAnimSettings)
+	float speed;
 
-	// 총 쏘기 몽타주
-	UPROPERTY(EditDefaultsOnly, Category=Montage)
-	UAnimMontage* FireMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Montage)
-	float FireMontageRate = 1.f;
+	UPROPERTY()
+	class ANetTPSCharacter* player;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MyAnimSettings)
-	float PitchAngle;
+	// 총쏘기 몽타주
+	UPROPERTY(EditDefaultsOnly, Category=MyAnimSettings)
+	class UAnimMontage* fireMontage;
+
+	// 회전값 기억변수
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=MyAnimSettings)
+	float pitchAngle;
 
 	// 재장전 몽타주
-	UPROPERTY(EditDefaultsOnly, Category=Montage)
-	UAnimMontage* ReloadMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Montage)
-	float ReloadMontageRate = 1.f;
+	UPROPERTY(EditDefaultsOnly, Category=MyAnimSettings)
+	class UAnimMontage* reloadMontage;
 
+	// 죽었는지 상태 기억 변수
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=MyAnimSettings)
+	bool isDead = false;
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
@@ -55,10 +53,9 @@ public:
 	// 총쏘기 애니메이션 재생 함수
 	void PlayFireAnimation();
 
-	// 재장전 애니메이션 재생 함수
+	// 재장전 애니메이션 재생
 	void PlayReloadAnimation();
-	// 재장전 애니메이션 노티파이 콜백 처리 함수
+	// 재장전 애니메이션 노티파이 이벤트 콜백 처리 함수
 	UFUNCTION()
 	void AnimNotify_OnReloadFinish();
-	
 };

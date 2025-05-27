@@ -7,17 +7,16 @@
 
 UNetPlayerAnimInstance::UNetPlayerAnimInstance()
 {
-	ConstructorHelpers::FObjectFinder<UAnimMontage> FireAnimMontage(
-		TEXT("/Script/Engine.AnimMontage'/Game/Net/Animations/AM_Pistol_Fire_Montage.AM_Pistol_Fire_Montage'"));
-	if (FireAnimMontage.Succeeded())
+	ConstructorHelpers::FObjectFinder<UAnimMontage> tempFire(TEXT("'/Game/Net/Animations/MM_Pistol_Fire_Montage.MM_Pistol_Fire_Montage'"));
+	if (tempFire.Succeeded())
 	{
-		FireMontage = FireAnimMontage.Object;
+		fireMontage = tempFire.Object;
 	}
-	ConstructorHelpers::FObjectFinder<UAnimMontage> ReloadAnimMontage(
-		TEXT("/Script/Engine.AnimMontage'/Game/Net/Animations/AM_Pistol_Reload_Montage.AM_Pistol_Reload_Montage'"));
-	if (ReloadAnimMontage.Succeeded())
+
+	ConstructorHelpers::FObjectFinder<UAnimMontage> tempReload(TEXT("'/Game/Net/Animations/MM_Pistol_Reload_Montage.MM_Pistol_Reload_Montage'"));
+	if (tempReload.Succeeded())
 	{
-		ReloadMontage = ReloadAnimMontage.Object;
+		reloadMontage = tempReload.Object;
 	}
 }
 
@@ -25,49 +24,53 @@ void UNetPlayerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
-	Player = Cast<ANetTPSCharacter>(TryGetPawnOwner());
+	player = Cast<ANetTPSCharacter>(TryGetPawnOwner());
 }
 
 void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	// Player의 속도와 방향의 값을 가져와서 할당해주기
-	if (Player)
+	// Player 의 속도와 이동 방향의 값을 가져와서 할당해주기
+	// 1. Player 가 있어야 한다.
+	if (player)
 	{
-		FVector vel = Player->GetVelocity();
-		Speed = FVector::DotProduct(vel, Player->GetActorForwardVector());
-		Direction = FVector::DotProduct(vel, Player->GetActorRightVector());
-		bHasPistol = Player->bHasPistol;
-		bIsDead = Player->bIsDead;
-		
-		// 회전값 가져오기
-		PitchAngle = -Player->GetBaseAimRotation().GetNormalized().Pitch;
-		PitchAngle = FMath::Clamp(PitchAngle, -60.f, 60.f);
+		// 2. 속도와 방향 값 할당하기
+		FVector vel = player->GetVelocity();
+		speed = FVector::DotProduct(vel, player->GetActorForwardVector());
+		direction = FVector::DotProduct(vel, player->GetActorRightVector());
+
+		bHasPistol = player->bHasPistol;
+
+		// 회전값 적용
+		pitchAngle = -player->GetBaseAimRotation().GetNormalized().Pitch;
+		pitchAngle = FMath::Clamp(pitchAngle, -60.0f, 60.0f);
+
+		// 죽음 상태 적용
+		isDead = player->isDead;
 	}
 }
 
 void UNetPlayerAnimInstance::PlayFireAnimation()
 {
-	if (!bHasPistol) return;
-
-	if (FireMontage)
+	// 총을 갖고 있고, 몽타주가 있을 때 재생하자
+	if (bHasPistol && fireMontage)
 	{
-		Montage_Play(FireMontage, FireMontageRate);
+		Montage_Play(fireMontage);
 	}
 }
 
+// 재장전 애니메이션 재생
 void UNetPlayerAnimInstance::PlayReloadAnimation()
 {
-	if (!bHasPistol) return;
-
-	if (ReloadMontage)
+	if (bHasPistol && reloadMontage)
 	{
-		Montage_Play(ReloadMontage, ReloadMontageRate);
+		Montage_Play(reloadMontage);
 	}
 }
 
+// 재장전 애니메이션 종료 이벤트 발생시 처리 콜백함수
 void UNetPlayerAnimInstance::AnimNotify_OnReloadFinish()
 {
-	Player->InitBulletUI();
+	player->InitAmmoUI();
 }

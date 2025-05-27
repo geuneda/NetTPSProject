@@ -15,6 +15,6 @@ class NETTPS_API UHealthBar : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintReadOnly, Category = HP)
-	float HP = 1.f;
+	UPROPERTY(BlueprintReadOnly, Category="HP")
+	float hp = 1.0f;
 };

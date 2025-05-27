@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
-#include "Particles/ParticleSystem.h"
 #include "NetTPSCharacter.generated.h"
 
 class USpringArmComponent;
@@ -62,13 +61,8 @@ protected:
 
 	virtual void NotifyControllerChanged() override;
 
-
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	virtual void BeginPlay() override;
-
-	virtual void Tick(float DeltaSeconds) override;
-	
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -78,102 +72,125 @@ public:
 public:
 	// 총을 자식으로 붙일 컴포넌트
 	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* GunComp;
+	class USceneComponent* gunComp;
 
-public:
-	// 총 잡기
+public: // --------- 총잡기 -----------
 	UPROPERTY(EditAnywhere, Category=Input)
-	UInputAction* IA_TakePistol;
+	UInputAction* ia_TakePistol;
 
-	// 필요속성 : 총 소유 여부, 소유중인 총, 총 검색 범위
+	// 필요속성 : 총소유 여부, 소유중인 총, 총 검색 범위
+	UPROPERTY(Replicated)
 	bool bHasPistol = false;
-
+	
 	UPROPERTY()
-	AActor* OwnedPistol = nullptr;
-
+	AActor* ownedPistol = nullptr;
 	UPROPERTY(EditAnywhere, Category=Gun)
-	float GetGunDistance = 200;
+	float distanceToGun = 200;
 
-	// 월드에 배치 된 총들
+	// 월드에 배치된 총들
 	UPROPERTY()
-	TArray<AActor*> PistolActors;
+	TArray<AActor*> pistolActors;
 
-	void TakePistol(const struct FInputActionValue& Value);
-	// 총을 컴포넌트에 붙이는 함수
+	virtual void BeginPlay() override;
+	
+	void TakePistol(const struct FInputActionValue& value);
+	// 총을 컴포넌에 붙이는 함수
 	void AttachPistol(AActor* pistolActor);
 
-	/* 총 놓기 **/
-public:
-	// 입력 처리
+public: // ----------- 총 놓기 -------------
+	// 입력처리 멤버들 선언
 	UPROPERTY(EditDefaultsOnly, Category=Input)
-	UInputAction* IA_ReleaseAction;
-	// 총 놓기 함수
-	void ReleasePistol(const struct FInputActionValue& Value);
+	class UInputAction* ia_ReleaseAction;
+	// 총 놓기 처리 함수
+	void ReleasePistol(const struct FInputActionValue& value);
+	// 총을 컴포넌트에서 분리
+	void DetachPistol(AActor* pistolActor);
 
-public:
-	// 총쏘기
+public: // ----------- 총쏘기 -------------
 	UPROPERTY(EditDefaultsOnly, Category=Input)
-	UInputAction* IA_FireAction;
+	class UInputAction* ia_FireAction;
 
-	// 총 쏘기 처리 함수
-	void Fire(const struct FInputActionValue& Value);
+	// 총알 이펙트
+	UPROPERTY(EditDefaultsOnly, Category=Gun)
+	class UParticleSystem* gunEffect;
 
-	// 파티클
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UParticleSystem> HitParticle;
+	// 총쏘기 처리함수
+	void Fire(const struct FInputActionValue& value);
 
-	public:/** UI */
+public: // -------------- UI -----------------
 	UPROPERTY(EditDefaultsOnly, Category=UI)
-	TSubclassOf<class UMainUI> MainUIWidget;
+	TSubclassOf<class UMainUI> mainUIWidget;
 	UPROPERTY()
-	class UMainUI* MainUI;
+	class UMainUI* mainUI;
 
-	// 최대 총알 개수
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bullet)
-	int32 MaxBulletCount = 10;
-	// 남은 총알 개수
-	int32 BulletCount = MaxBulletCount;
+	// 최대 총알개수
+	UPROPERTY(EditDefaultsOnly, Category=Bullet)
+	int32 maxBulletCount = 10;
 	
-	
+	// 남은 총알개수
+	UPROPERTY(ReplicatedUsing=OnRep_BulletCount)
+	int32 bulletCount = maxBulletCount;
+	UFUNCTION()
+	void OnRep_BulletCount();
+
 	// UI 초기화 함수
-	void InitUI();
+	void InitUIWidget();
 
-public: // 재장전
+public: // ------------- 재장전 ------------
 	UPROPERTY(EditDefaultsOnly, Category=Input)
-	class UInputAction* IA_Reload;
-
-	// 재장전 중인지 여부
-	bool bIsReloading = false;
+	class UInputAction* ia_Relaod;
+	// 재장전 중인지 여부를 기억하는 변수
+	bool isReloading = false;
 	
-	void ReloadPistol(const struct FInputActionValue& Value);
-	void StopMontagesAndResetReload();
+	void ReloadPistol(const struct FInputActionValue& value);
 
 	// 총알 UI 초기화 함수
-	void InitBulletUI();
+	void InitAmmoUI();
 
-public: // 플레이어 체력
+public: // ------------ 플레이어 체력 --------------
 	UPROPERTY(EditDefaultsOnly, Category=HP)
-	float MaxHP = 3;
-	float CurHP = MaxHP;
+	float maxHP = 3;
+	float hp = maxHP;
 
-	// HP 프로퍼티
-	__declspec(property(get = GetHP, put = SetHP)) float HP;
+	// 머리는 변수, 몸통은 함수인 get/set property 로 변경
+	__declspec(property(get = GetHP, put = SetHP))
+	float HP;
 	
-	float GetHP() const { return CurHP; }
+	float GetHP() const { return hp; }
 	void SetHP(float value);
 
-	UPROPERTY(VisibleAnywhere, Category=HP)
-	class UWidgetComponent* HPUIComp;
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* hpUIComp;
 
-public: // 피격 처리
+public: // ----------- 피격 처리 --------------
 	void DamageProcess();
 
-public: // 죽음 처리
-	bool bIsDead = false;
+public: // ------------ 죽음 처리 --------------
+	bool isDead = false;
 
-public: // Network
-
-	// 네트워크 상태로그 출력 함수
+public: // ---------------- Network -----------------
+	virtual  void Tick(float DeltaSeconds) override;
+	// 네트워크 상태로그 출력함수
 	void PrintNetLog();
+
+public: // -------------- RPC --------------------
+	// -> 총잡기
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_TakePistol();
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiRPC_TakePistol(AActor* pistolActor);
+	// -> 총놓기
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ReleasePistol();
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiRPC_ReleasePistol(AActor* pistolActor);
+	// -> 총쏘기
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_FirePistol();
+	// 부딪힌 결과 정보, hitinfo 정보
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiRPC_FirePistol(bool bHit, const FHitResult& hitInfo);
+	
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };
 

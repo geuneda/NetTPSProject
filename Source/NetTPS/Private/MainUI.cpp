@@ -2,29 +2,36 @@
 
 
 #include "MainUI.h"
+#include "Blueprint/UserWidget.h"
 #include "Components/Image.h"
 #include "Components/UniformGridPanel.h"
 
 UMainUI::UMainUI(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	ConstructorHelpers::FClassFinder<UUserWidget> tempBulletUI(
-		TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Net/UI/WBP_Bullet.WBP_Bullet_C'"));
-	if (tempBulletUI.Succeeded())
+	ConstructorHelpers::FClassFinder<UUserWidget> tempBullet(TEXT("'/Game/Net/UIs/WBP_Bullet.WBP_Bullet_C'"));
+	if (tempBullet.Succeeded())
 	{
-		BulletUIFactory = tempBulletUI.Class;
+		bulletUIFactory = tempBullet.Class;
 	}
 }
 
-void UMainUI::ShowCrosshair(bool bShow)
+void UMainUI::ShowCrosshair(bool isShow)
 {
-	Image_Crosshair->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+	if (isShow)
+	{
+		img_Crosshair->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		img_Crosshair->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 
-// 총알 위젯을 만들어서 패널에 추가
+// 총알위젯 만들어서 패널에 추가하기
 void UMainUI::AddBullet()
 {
-	auto bulletUI = CreateWidget<UUserWidget>(GetWorld(), BulletUIFactory);
-	BulletPanel->AddChildToUniformGrid(bulletUI, 0, BulletPanel->GetChildrenCount());
+	auto bulletWidget = CreateWidget(GetWorld(), bulletUIFactory);
+	BulletPanel->AddChildToUniformGrid(bulletWidget, 0, BulletPanel->GetChildrenCount());
 }
 
 void UMainUI::PopBullet(int32 index)
@@ -32,7 +39,7 @@ void UMainUI::PopBullet(int32 index)
 	BulletPanel->RemoveChildAt(index);
 }
 
-void UMainUI::RemoveAllBullet()
+void UMainUI::RemoveAllAmmo()
 {
 	BulletPanel->ClearChildren();
 }

@@ -16,6 +16,7 @@
 #include "NetTPS.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystem.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -34,8 +35,8 @@ ANetTPSCharacter::ANetTPSCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bUseControllerDesiredRotation = true;
-	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true; // Character moves in the direction of input...	
+	GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
@@ -51,8 +52,7 @@ ANetTPSCharacter::ANetTPSCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->SetRelativeLocation(FVector(0, 40, 60));
-	CameraBoom->TargetArmLength = 150.0f;
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 150.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -60,52 +60,63 @@ ANetTPSCharacter::ANetTPSCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Gun 컴포넌트 추가
-	GunComp = CreateDefaultSubobject<USceneComponent>(TEXT("GunComp"));
-	GunComp->SetupAttachment(GetMesh(), TEXT("GunPosition"));
-	GunComp->SetRelativeLocation(FVector(-5.000000,-8.660254,-0.000000));
-	GunComp->SetRelativeRotation(FRotator(0, 60, 0));
+	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
+	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
-	HPUIComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPUIComp"));
-	HPUIComp->SetupAttachment(GetMesh());
+	// gun 컴포넌트 추가
+	gunComp = CreateDefaultSubobject<USceneComponent>(TEXT("GunComp"));
+	gunComp->SetupAttachment(GetMesh(), TEXT("GunPosition"));
+	gunComp->SetRelativeLocation(FVector(-15.826352,4.000000,3.015192));
+	gunComp->SetRelativeRotation(FRotator(0.867172,85.075584,9.962711));
 
-	ConstructorHelpers::FObjectFinder<UInputAction> tempIA(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_TakePistol.IA_TakePistol'"));
-	if (tempIA.Succeeded())
+	// ia_takepistol 애셋 로드해서 등록해주기
+	ConstructorHelpers::FObjectFinder<UInputAction> tempTakePistol(TEXT("'/Game/Net/Inputs/IA_TakePistol.IA_TakePistol'"));
+
+	if (tempTakePistol.Succeeded())
 	{
-		IA_TakePistol = tempIA.Object;
+		ia_TakePistol = tempTakePistol.Object;
 	}
 
-	ConstructorHelpers::FObjectFinder<UInputAction> tempIA_R(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_ReleaseAction.IA_ReleaseAction'"));
-	if (tempIA_R.Succeeded())
+	ConstructorHelpers::FObjectFinder<UInputAction> tempReleasePistol(TEXT("'/Game/Net/Inputs/IA_ReleasePistol.IA_ReleasePistol'"));
+
+	if (tempReleasePistol.Succeeded())
 	{
-		IA_ReleaseAction = tempIA_R.Object;
+		ia_ReleaseAction = tempReleasePistol.Object;
 	}
 
-	ConstructorHelpers::FObjectFinder<UInputAction> tempIA_F(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_FireAction.IA_FireAction'"));
-	if (tempIA_F.Succeeded())
+	ConstructorHelpers::FObjectFinder<UInputAction> tempFireAction(TEXT("'/Game/Net/Inputs/IA_Fire.IA_Fire'"));
+
+	if (tempFireAction.Succeeded())
 	{
-		IA_FireAction = tempIA_F.Object;
+		ia_FireAction = tempFireAction.Object;
 	}
 
-	ConstructorHelpers::FObjectFinder<UInputAction> tempIA_Reload(TEXT("/Script/EnhancedInput.InputAction'/Game/Net/Inputs/IA_Reload.IA_Reload'"));
-	if (tempIA_Reload.Succeeded())
+	ConstructorHelpers::FObjectFinder<UParticleSystem> tempBulletEffect(TEXT("'/Game/StarterContent/Particles/P_Explosion.P_Explosion'"));
+
+	if (tempBulletEffect.Succeeded())
 	{
-		IA_Reload = tempIA_Reload.Object;
+		gunEffect = tempBulletEffect.Object;
 	}
 
-	ConstructorHelpers::FObjectFinder<UParticleSystem> tempPaticle(TEXT("/Script/Engine.ParticleSystem'/Game/StarterContent/Particles/P_Explosion.P_Explosion'"));
-	if (tempPaticle.Succeeded())
+	ConstructorHelpers::FClassFinder<UMainUI> tempMainUI(TEXT("'/Game/Net/UIs/WBP_MainUI.WBP_MainUI_C'"));
+	if (tempMainUI.Succeeded())
 	{
-		HitParticle = tempPaticle.Object;
+		mainUIWidget = tempMainUI.Class;
 	}
 
-	ConstructorHelpers::FClassFinder<UMainUI> tempUI(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Net/UI/WBP_MainUI.WBP_MainUI_C'"));
-	if (tempUI.Succeeded())
+	ConstructorHelpers::FObjectFinder<UInputAction> tempReloadAction(TEXT("'/Game/Net/Inputs/IA_Reload.IA_Reload'"));
+
+	if (tempReloadAction.Succeeded())
 	{
-		MainUIWidget = tempUI.Class;
+		ia_Relaod = tempReloadAction.Object;
 	}
+
+	// UI 위젯컴포넌트 추가
+	hpUIComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("hpUIComp"));
+	hpUIComp->SetupAttachment(GetMesh());
 }
 
+//////////////////////////////////////////////////////////////////////////
 // Input
 
 void ANetTPSCharacter::NotifyControllerChanged()
@@ -120,7 +131,6 @@ void ANetTPSCharacter::NotifyControllerChanged()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-	
 }
 
 void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -138,13 +148,18 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ANetTPSCharacter::Look);
 
-		EnhancedInputComponent->BindAction(IA_TakePistol, ETriggerEvent::Started, this, &ANetTPSCharacter::TakePistol);
+		// 총잡기
+		EnhancedInputComponent->BindAction(ia_TakePistol, ETriggerEvent::Started, this, &ANetTPSCharacter::TakePistol);
 
-		EnhancedInputComponent->BindAction(IA_ReleaseAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReleasePistol);
+		// 총 놓기
+		EnhancedInputComponent->BindAction(ia_ReleaseAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReleasePistol);
 
-		EnhancedInputComponent->BindAction(IA_FireAction, ETriggerEvent::Started, this, &ANetTPSCharacter::Fire);
+		// 총쏘기
+		EnhancedInputComponent->BindAction(ia_FireAction, ETriggerEvent::Started, this, &ANetTPSCharacter::Fire);
 
-		EnhancedInputComponent->BindAction(IA_Reload, ETriggerEvent::Started, this, &ANetTPSCharacter::ReloadPistol);
+		// 재장전
+		EnhancedInputComponent->BindAction(ia_Relaod, ETriggerEvent::Started, this, &ANetTPSCharacter::ReloadPistol);
+		
 	}
 	else
 	{
@@ -155,159 +170,300 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void ANetTPSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	PistolActors.Empty();
-	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), AActor::StaticClass(), FName(TEXT("Gun")), PistolActors);
 
-	InitUI();
+	// 총 검색
+	TArray<AActor*> allActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(),allActors);
+	for (auto tempPistol : allActors)
+	{
+		// 2.2 이름을 조사해서 pistol 인 녀석으로 구분
+		if (tempPistol->GetActorNameOrLabel().Contains("BP_Pistol"))
+		{
+			pistolActors.Add(tempPistol);
+		}
+	}
+
+	InitUIWidget();
 }
 
-void ANetTPSCharacter::InitUI()
+// main ui 위젯을 만들어 화면에 표시한다.
+void ANetTPSCharacter::InitUIWidget()
 {
-	// 내 캐릭터일 때만 MainUI 생성
+	// 내 캐릭터일 때만 mainUI 만들도록 처리
 	auto pc = Cast<APlayerController>(Controller);
-	if (!pc) return;
+	if (pc == nullptr)
+	{
+		return;
+	}
 	
-	if (!MainUIWidget) return;
-	MainUI = Cast<UMainUI>(CreateWidget<UMainUI>(GetWorld(), MainUIWidget));
-	MainUI->AddToViewport();
-	MainUI->ShowCrosshair(bHasPistol);
-
-	BulletCount = MaxBulletCount;
-
-	for (int i = 0; i < MaxBulletCount; i++)
+	if (mainUIWidget)
 	{
-		MainUI->AddBullet();
+		mainUI = Cast<UMainUI>(CreateWidget(GetWorld(), mainUIWidget));
+		mainUI->AddToViewport();
+		mainUI->ShowCrosshair(false);
+
+		// 총알세팅
+		bulletCount = maxBulletCount;
+		for (int i=0; i < bulletCount; i++)
+		{
+			mainUI->AddBullet();
+		}
 	}
 }
 
-void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& Value)
+void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& value)
 {
-	if (!bHasPistol || bIsReloading) return;
-
-	if (auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance())) anim->PlayReloadAnimation();
-
-	bIsReloading = true;
-}
-
-void ANetTPSCharacter::InitBulletUI()
-{
-	BulletCount = MaxBulletCount;
-	MainUI->RemoveAllBullet();
-
-	for (int i = 0; i < MaxBulletCount; i++)
+	// 총을 갖고 있지 않으면 처리 하지 않는다.
+	// 혹은 이미지 재장전 중일때도 처리하지 않는다.
+	if (bHasPistol == false || isReloading)
 	{
-		MainUI->AddBullet();
+		return;
 	}
 
-	bIsReloading = false;
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayReloadAnimation();
+	}
+
+	// 재장전 중으로 설정
+	isReloading = true;
 }
 
-void ANetTPSCharacter::TakePistol(const struct FInputActionValue& Value)
+void ANetTPSCharacter::InitAmmoUI()
+{
+	// 총알을 다시 최대 개수만큼 채워주자.
+	bulletCount = maxBulletCount;
+	mainUI->RemoveAllAmmo();
+	for (int i=0; i < bulletCount; i++)
+	{
+		mainUI->AddBullet();
+	}
+
+	// 재장전 종료
+	isReloading = false;
+}
+
+
+void ANetTPSCharacter::TakePistol(const struct FInputActionValue& value)
 {
 	// F 키를 눌렀을 때 호출되는 이벤트 콜백 함수
-	// 이미 총을 잡고 있지 않다면 일정 범위 안에 있는 총을 잡는다.
+	// 이미 총을 잡고있지 않다면 일정 범위 안에있는 총을 잡는다.
+	// 필요속성 : 총소유 여부, 소유중인 총, 총 검색 범위
 	// 1. 총을 잡고 있지 않아야 한다.
-	if (bHasPistol) return;
-	
-	// 2. 범위 안에 총이 있어야 한다.
-	for (auto gun : PistolActors)
+	if (bHasPistol)
 	{
-		if (!IsValid(gun))return;
-		
-		if (gun->GetOwner() != nullptr)
-		{
-			continue;
-		}
-
-		if (GetDistanceTo(gun) > GetGunDistance)
-		{
-			continue;
-		}
-		
-		// 3. 총을 잡고싶다.
-		OwnedPistol = gun;
-		OwnedPistol->SetOwner(this);
-		bHasPistol = true;
-		MainUI->ShowCrosshair(bHasPistol);
-
-		AttachPistol(gun);
-		break;
+		return;
 	}
+
+	// 서버에 총잡기 버튼을 눌렀다고 Server RPC 보내자.
+	ServerRPC_TakePistol();
+}
+
+void ANetTPSCharacter::ServerRPC_TakePistol_Implementation()
+{
+	// 2. 범위 안에 있어야한다.
+	// -> 월드에 있는 모든 총을 가져와서 범위 검사를 해야 한다.
+	// 2.1 월드에 있는 모든 액터를 가져온다.
 	
+	for (auto tempPistol : pistolActors)
+	{
+		// 2.2 이름을 조사해서 pistol 인 녀석으로 구분
+		// -> 단, 소유자가 있으면 안된다.
+		if (tempPistol && tempPistol->IsPendingKillPending() == false && IsValid(tempPistol) && tempPistol->GetOwner() != nullptr)
+		{
+			continue;
+		}
+		// 2.2 범위 검사를 한다.
+		// 총과의 거리를 구한다.
+		float distance = FVector::Dist(GetActorLocation(), tempPistol->GetActorLocation());
+		if (distance > distanceToGun)
+		{
+			continue;
+		}
+		// 3. 총을 잡고싶다.
+		ownedPistol = tempPistol;
+		ownedPistol->SetOwner(this);
+		bHasPistol = true;
+
+		// 모든 클라이언트들한테 시각화처리 요청하기
+		MultiRPC_TakePistol(tempPistol);
+		break;
+	}	
+}
+
+void ANetTPSCharacter::MultiRPC_TakePistol_Implementation(AActor* pistolActor)
+{
+		// 총 붙이기
+		AttachPistol(pistolActor);
 }
 
 void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 {
+	// gunComp 컴포넌트에 붙이기
 	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
-
+	// 물리기능 꺼주기
 	meshComp->SetSimulatePhysics(false);
-	meshComp->AttachToComponent(GunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-}
+	meshComp->AttachToComponent(gunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
-void ANetTPSCharacter::StopMontagesAndResetReload()
-{
-	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
-	if (anim) anim->StopAllMontages(0.1f);
-	bIsReloading = false;
-}
-
-void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& Value)
-{
-	if (OwnedPistol && bHasPistol)
+	// 내 캐릭터 일때만 -> Player Controller 에 의해서 제어 되고 있을 때만.
+	// Role -> Autonomous 일때
+	if (IsLocallyControlled() && mainUI)
 	{
-		// 몽타주 취소 및 재장전 취소
-		StopMontagesAndResetReload();
-		
-		OwnedPistol->SetOwner(nullptr);
-		bHasPistol = false;
-		MainUI->ShowCrosshair(bHasPistol);
-
-		auto meshComp = OwnedPistol->GetComponentByClass<UStaticMeshComponent>();
-
-		meshComp->SetSimulatePhysics(true);
-		meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+		mainUI->ShowCrosshair(true);
 	}
 }
 
-void ANetTPSCharacter::Fire(const struct FInputActionValue& Value)
+void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& value)
 {
-	// 총이 없으면 발사 x
-	if (!bHasPistol || BulletCount <= 0 || bIsReloading) return;
-	
-	// 총쏘기 -> Line Trace
-	FVector Start = FollowCamera->GetComponentLocation();
-	FVector End = Start + FollowCamera->GetForwardVector() * 10000;
-	FHitResult OutHit;
-	FCollisionQueryParams Parms;
-	Parms.AddIgnoredActor(this);
-	
-	bool bHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility,Parms);
-	
-	// 피격 시 파티클 출력
+	// 총을 잡고 있지 않으면 처리 하지 않는다.
+	if (bHasPistol == false || isReloading)
+	{
+		return;
+	}
 
+	// 서버에 총놓기 요청하기
+	ServerRPC_ReleasePistol();
+}
+
+void ANetTPSCharacter::ServerRPC_ReleasePistol_Implementation()
+{
+	// 잡은 총을 놓고 싶다.
+	if (ownedPistol)
+	{
+		// 모든 클라이언트한테 총놓기 메시지 보내기
+		MultiRPC_ReleasePistol(ownedPistol);
+		
+		bHasPistol = false;
+		ownedPistol->SetOwner(nullptr);
+		ownedPistol = nullptr;
+	}
+}
+
+void ANetTPSCharacter::MultiRPC_ReleasePistol_Implementation(AActor* pistolActor)
+{
+	DetachPistol(pistolActor);
+}
+
+void ANetTPSCharacter::DetachPistol(AActor* pistolActor)
+{
+	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
+	meshComp->SetSimulatePhysics(true);
+	meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+
+	if (IsLocallyControlled() && mainUI)
+	{
+		mainUI->ShowCrosshair(false);
+	}
+}
+
+void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
+{
+	// 총이 없으면 처리하지 않는다.
+	if (bHasPistol == false || bulletCount <= 0 || isReloading)
+	{
+		return;
+	}
+
+	// Server 에 총쏘기 처리 요청을 한다.
+	ServerRPC_FirePistol();
+}
+
+void ANetTPSCharacter::ServerRPC_FirePistol_Implementation()
+{
+	// 총쏘기
+	// Line Trace
+	// 선에 부딪혔을 때 그 지점에 P_Explosion 가 재생 되도록 하고 싶다.
+	// 1. 선이 필요하다.
+	FVector startPos = GetFollowCamera()->GetComponentLocation();
+	FVector endPos = startPos + GetFollowCamera()->GetForwardVector() * 10000.0f;
+	// 2. 선을 쏴야한다.
+	FHitResult hitInfo;
+	FCollisionQueryParams params;
+	params.AddIgnoredActor(this);
+	bool bHit = GetWorld()->LineTraceSingleByChannel(hitInfo, startPos, endPos, ECC_Visibility, params);
+	// 3. 선이 부딪혔으니까
 	if (bHit)
 	{
-		// 파티클 출력
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, OutHit.ImpactPoint, FRotator(0, 0, 0));
-
-		// 데미지 처리
-		if (auto target = Cast<ANetTPSCharacter>(OutHit.GetActor()))
+		// 5. 맞은 대상이 상대방일 경우 피격 처리
+		auto otherPlayer = Cast<ANetTPSCharacter>(hitInfo.GetActor());
+		if (otherPlayer)
 		{
-			target->DamageProcess();
+			otherPlayer->DamageProcess();
 		}
 	}
 
+	// 총알 제거
+	bulletCount--;
+	OnRep_BulletCount();
+	
+	// 클라이언트들한테 결과 처리 하도록 보내기
+	MultiRPC_FirePistol(bHit, hitInfo);
+}
+
+// 클라이언트에서 호출되는 RPC 함수
+void ANetTPSCharacter::MultiRPC_FirePistol_Implementation(bool bHit, const FHitResult& hitInfo)
+{
+	if (bHit)
+	{
+		// 4. 효과를 재생하고 싶다.
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), gunEffect, hitInfo.Location);
+	}
+
+	// 애니메이션 재생
 	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
 	if (anim)
 	{
 		anim->PlayFireAnimation();
 	}
 
-	// 총알 제거
-	BulletCount--;
-	MainUI->PopBullet(BulletCount);
+	
 }
+
+// bulletCount 변수가 서버에서 변경되면 자동으로 호출되는 콜백 함수
+// -> 클라이언트에서만 호출되는 함수
+void ANetTPSCharacter::OnRep_BulletCount()
+{
+	if (mainUI)
+	{
+		mainUI->PopBullet(bulletCount);
+	}
+}
+
+void ANetTPSCharacter::DamageProcess()
+{
+	HP--;
+
+	// 죽음처리
+	if (HP <= 0)
+	{
+		isDead = true;
+	}
+}
+
+void ANetTPSCharacter::SetHP(float value)
+{
+	// 체력 감소시키기
+	hp = value;
+
+	// UI Update
+	float percent = hp / maxHP;
+	// 나일경우는 mainUI hp 를 갱신
+	//-> PlayerController 있을 때 mainUI 를 생성한다.
+	if (mainUI)
+	{
+		mainUI->hp = percent;
+	}
+	// 상대방일 경우
+	else
+	{
+		// -> healthbar 를 갖고있는 컴포넌트를 가져와야 한다.
+		// -> 그 컴포넌트에 있는 healthBar hp 를 갱신
+		auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
+		hpUI->hp = percent;
+	}
+}
+
 
 void ANetTPSCharacter::Move(const FInputActionValue& Value)
 {
@@ -332,36 +488,6 @@ void ANetTPSCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void ANetTPSCharacter::DamageProcess()
-{
-	HP--;
-	if (HP <= 0) bIsDead = true;
-}
-
-void ANetTPSCharacter::SetHP(float value)
-{
-	CurHP = value;
-	
-	// UI 업데이트
-	float percent = CurHP / MaxHP;
-	// 나일경우는 Main UI HP를 갱신
-	// 나일 경우만 MainUI를 생성함
-	if (MainUI)
-	{
-		MainUI->HP = percent;
-	}
-	// 상대방일 경우는 HPUIComp의 UI를 갱신
-	else
-	{
-		auto hpUI = Cast<UHealthBar>(HPUIComp->GetWidget());
-
-		if (hpUI)
-		{
-			hpUI->HP = percent;
-		}
-	}
-}
-
 void ANetTPSCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -375,23 +501,33 @@ void ANetTPSCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-/* Network **/
-
+// ------------------------ Network--------------------------------
 void ANetTPSCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	PrintNetLog();
+	//PrintNetLog();
 }
 
 void ANetTPSCharacter::PrintNetLog()
 {
-    // 네트워크 상태 로그 출력
-	const FString conStr = GetNetConnection() != nullptr ? TEXT("Valid Connection") : TEXT(" InValid Connection");
+	// 네트워크 상태 로그 출력
+	const FString connStr = GetNetConnection() != nullptr ? TEXT("Valid Connection") : TEXT("Invalid Connection");
 	// Owner 출력
-	const FString ownerName = GetOwner() ? GetOwner()->GetName() : TEXT(" No Owner");
+	const FString ownerName = GetOwner() ? GetOwner()->GetName() : TEXT("No Owner");
+	// Role 출력
+	const FString logStr = FString::Printf(TEXT("Connection : %s\nOwner Name : %s\nLocal Role : %s\nRemote Role : %s"), *connStr, *ownerName, *LOCALROLE, *REMOTEROLE);
 	
-	const FString conStr2 = FString::Printf(TEXT("Owner: %s\nConnection: %s\nLocal Role: %s\nRemote Role: %s"), *ownerName, *conStr, *LOCALROLE, *REMOTEROLE);
-	
-	DrawDebugString(GetWorld(), GetActorLocation(), conStr2, nullptr, FColor::Yellow, 0, true, 1);
+	DrawDebugString(GetWorld(), GetActorLocation(), logStr, nullptr,FColor::Yellow, 0, true, 1);
 }
+
+void ANetTPSCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ANetTPSCharacter, bHasPistol);
+	DOREPLIFETIME(ANetTPSCharacter, bulletCount);
+}
+
+
+

@@ -18,10 +18,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	// Owner 설정 함수
-	void FindAndSetNearestOwner();
-	// 네트워크 상태로그 출력 함수
-	void PrintNetLog();
 
 public:
 	// Called every frame
@@ -29,38 +25,48 @@ public:
 
 public:
 	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* MeshComp;
+	class UStaticMeshComponent* meshComp;
 
+	// 네트워크 상태로그 출력함수
+	void PrintNetLog();
 
 	// Owner 검출 영역
 	UPROPERTY(EditAnywhere)
-	float SearchRadius = 200;
+	float searchDistance = 200;
 
-	float curDis = 0.f;
-	float nearDis = 0.f;
+	// Owner 찾아서 설정하는것 함수
+	void FindOwner();
 
-public: // ------------회전 동기화 처리
-	UPROPERTY(ReplicatedUsing = OnRep_RotYaw) // 변경 됐을 때 OnRep_RotYaw 함수를 호출
-	float RotYaw = 0;
+public: // ---------- 회전 동기화 처리 ------------
+	UPROPERTY(ReplicatedUsing=OnRep_RotYaw)
+	float rotYaw = 0;
 
-	// RotYaw가 변경 됐을 때 호출되는 이벤트 함수
+	// rotYaw 변수가 변경 됐을 때 호출되는 이벤트 콜백
 	UFUNCTION()
 	void OnRep_RotYaw();
 	
-	float RotSpeed = 50;
+	float rotSpeed = 50;
 
 	// 부드럽게 회전 보간 하기 위한 변수
-	float CurrentTime = 0;
-	float LastTime = 0;
-public: // 재질 동기화를 위한 속성
+	float currentTime = 0;
+	float lastTime = 0;
+
+public: // 재질 동기화기를 위한 속성
 	UPROPERTY()
-	class UMaterialInstanceDynamic* Mat;
-	// 재질에 동기화 될 색상
-	UPROPERTY(ReplicatedUsing = OnRep_ChangeMatColor)
-	FLinearColor MatColor;
+	class UMaterialInstanceDynamic* mat;
+	// 재질에 동기화될 색상
+	UPROPERTY(ReplicatedUsing=OnRep_ChangeMatColor)
+	FLinearColor matColor;
 	UFUNCTION()
 	void OnRep_ChangeMatColor();
-	
+
+public: // ----------- RPC -------------
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ChangeColor(const FLinearColor& newColor);
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_ChangeColor(const FLinearColor& newColor);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastRPC_ChangeColor(const FLinearColor& newColor);
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

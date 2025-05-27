@@ -16,29 +16,29 @@ class NETTPS_API UMainUI : public UUserWidget
 
 public:
 	UMainUI(const FObjectInitializer& ObjectInitializer);
-
 public:
-
-	// 크로스헤어
+	// Mainui 의 Image 위젯 참조 변수
 	UPROPERTY(meta=(BindWidget))
-	class UImage* Image_Crosshair;
-	// 총알 위젯 추가할 패널
+	class UImage* img_Crosshair;
+
+	// 총알 위젯이 추가될 패널
 	UPROPERTY(meta=(BindWidget))
 	class UUniformGridPanel* BulletPanel;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bullet)
-	TSubclassOf<class UUserWidget> BulletUIFactory;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Bullet")
+	TSubclassOf<class UUserWidget> bulletUIFactory;
 
-	UPROPERTY(BlueprintReadOnly, Category = HP)
-	float HP = 1.f;
+	UPROPERTY(BlueprintReadOnly, Category="HP")
+	float hp = 1.0f;
 public:
-	// 크로스헤어 Show/Hide
-	void ShowCrosshair(bool bShow);
-	
-	// 총알 위젯 추가 함수
+	// 크로스헤어 보일지여부 처리 함수
+	void ShowCrosshair(bool isShow);
+
+	// 총알위젯 추가 함수
 	void AddBullet();
 	// 총알 하나씩 제거하는 함수
 	void PopBullet(int32 index);
+	
 	// 모든 총알 UI 제거
-	void RemoveAllBullet();
+	void RemoveAllAmmo();
 };
