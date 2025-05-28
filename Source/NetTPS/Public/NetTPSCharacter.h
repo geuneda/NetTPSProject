@@ -190,6 +190,13 @@ public: // -------------- RPC --------------------
 	// 부딪힌 결과 정보, hitinfo 정보
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiRPC_FirePistol(bool bHit, const FHitResult& hitInfo);
+
+	// -> 재장전
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ReloadPistol();
+
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_ReloadPistol();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

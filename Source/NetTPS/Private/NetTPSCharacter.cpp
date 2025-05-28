@@ -221,27 +221,41 @@ void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& value)
 	}
 
 	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	
 	if (anim)
 	{
 		anim->PlayReloadAnimation();
 	}
 
-	// 재장전 중으로 설정
 	isReloading = true;
 }
 
-void ANetTPSCharacter::InitAmmoUI()
+void ANetTPSCharacter::ServerRPC_ReloadPistol_Implementation()
 {
 	// 총알을 다시 최대 개수만큼 채워주자.
 	bulletCount = maxBulletCount;
+	
+	ClientRPC_ReloadPistol();
+}
+
+void ANetTPSCharacter::ClientRPC_ReloadPistol_Implementation()
+{
 	mainUI->RemoveAllAmmo();
+	
 	for (int i=0; i < bulletCount; i++)
 	{
 		mainUI->AddBullet();
 	}
-
+	
 	// 재장전 종료
 	isReloading = false;
+}
+
+// 호출되는 시점이 언제냐면 -> 애니메이션이 종료되는 시점
+void ANetTPSCharacter::InitAmmoUI()
+{
+	// 서버에 처리 요청하기
+	ServerRPC_ReloadPistol();
 }
 
 
@@ -365,6 +379,13 @@ void ANetTPSCharacter::Fire(const struct FInputActionValue& value)
 		return;
 	}
 
+	// 애니메이션 재생
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (anim)
+	{
+		anim->PlayFireAnimation();
+	}
+
 	// Server 에 총쏘기 처리 요청을 한다.
 	ServerRPC_FirePistol();
 }
@@ -409,15 +430,6 @@ void ANetTPSCharacter::MultiRPC_FirePistol_Implementation(bool bHit, const FHitR
 		// 4. 효과를 재생하고 싶다.
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), gunEffect, hitInfo.Location);
 	}
-
-	// 애니메이션 재생
-	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
-	if (anim)
-	{
-		anim->PlayFireAnimation();
-	}
-
-	
 }
 
 // bulletCount 변수가 서버에서 변경되면 자동으로 호출되는 콜백 함수
