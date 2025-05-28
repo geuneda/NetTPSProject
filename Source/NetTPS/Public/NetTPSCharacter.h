@@ -151,6 +151,7 @@ public: // ------------ 플레이어 체력 --------------
 	UPROPERTY(ReplicatedUsing=OnRep_HP)
 	float hp = maxHP;
 
+	// C++에서는 클라이언트 에서만 동작하는 함수
 	UFUNCTION()
 	void OnRep_HP();
 

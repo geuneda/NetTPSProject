@@ -208,6 +208,11 @@ void ANetTPSCharacter::InitUIWidget()
 		{
 			mainUI->AddBullet();
 		}
+
+		if (hpUIComp)
+		{
+			hpUIComp->SetVisibility(false);
+		}
 	}
 }
 
@@ -215,7 +220,7 @@ void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& value)
 {
 	// 총을 갖고 있지 않으면 처리 하지 않는다.
 	// 혹은 이미지 재장전 중일때도 처리하지 않는다.
-	if (bHasPistol == false || isReloading)
+	if (bHasPistol == false || isReloading || bulletCount == maxBulletCount)
 	{
 		return;
 	}
@@ -523,7 +528,16 @@ void ANetTPSCharacter::Tick(float DeltaSeconds)
 	//PrintNetLog();
 
 
-	
+	// 빌보딩 처리
+	if (hpUIComp && hpUIComp->GetVisibleFlag())
+	{
+		// 카메라를 바라보도록 하고 싶다.
+		// 카메라로 향하는 방향
+		// dir = target - me
+		FVector dir = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->GetCameraLocation() - hpUIComp->GetComponentLocation();
+		dir.Z = 0;
+		hpUIComp->SetWorldRotation(dir.ToOrientationRotator());
+	}
 }
 
 void ANetTPSCharacter::PrintNetLog()
