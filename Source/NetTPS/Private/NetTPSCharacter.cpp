@@ -232,23 +232,23 @@ void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& value)
 
 void ANetTPSCharacter::ServerRPC_ReloadPistol_Implementation()
 {
-	// 총알을 다시 최대 개수만큼 채워주자.
 	bulletCount = maxBulletCount;
 	
-	ClientRPC_ReloadPistol();
+	ClientRPC_ReloadPistol(bulletCount);
 }
 
-void ANetTPSCharacter::ClientRPC_ReloadPistol_Implementation()
+void ANetTPSCharacter::ClientRPC_ReloadPistol_Implementation(int32 bc)
 {
+	bulletCount = bc;
+	// 재장전 종료
+	isReloading = false;
+
 	mainUI->RemoveAllAmmo();
 	
 	for (int i=0; i < bulletCount; i++)
 	{
 		mainUI->AddBullet();
 	}
-	
-	// 재장전 종료
-	isReloading = false;
 }
 
 // 호출되는 시점이 언제냐면 -> 애니메이션이 종료되는 시점
@@ -256,6 +256,26 @@ void ANetTPSCharacter::InitAmmoUI()
 {
 	// 서버에 처리 요청하기
 	ServerRPC_ReloadPistol();
+}
+
+void ANetTPSCharacter::OnRep_HP()
+{
+	// UI Update
+	float percent = hp / maxHP;
+	// 나일경우는 mainUI hp 를 갱신
+	//-> PlayerController 있을 때 mainUI 를 생성한다.
+	if (mainUI)
+	{
+		mainUI->hp = percent;
+	}
+	// 상대방일 경우
+	else
+	{
+		// -> healthbar 를 갖고있는 컴포넌트를 가져와야 한다.
+		// -> 그 컴포넌트에 있는 healthBar hp 를 갱신
+		auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
+		hpUI->hp = percent;
+	}
 }
 
 
@@ -416,26 +436,23 @@ void ANetTPSCharacter::ServerRPC_FirePistol_Implementation()
 
 	// 총알 제거
 	bulletCount--;
-	OnRep_BulletCount();
+	//OnRep_BulletCount();
 	
 	// 클라이언트들한테 결과 처리 하도록 보내기
-	MultiRPC_FirePistol(bHit, hitInfo);
+	MultiRPC_FirePistol(bHit, hitInfo, bulletCount);
 }
 
 // 클라이언트에서 호출되는 RPC 함수
-void ANetTPSCharacter::MultiRPC_FirePistol_Implementation(bool bHit, const FHitResult& hitInfo)
+void ANetTPSCharacter::MultiRPC_FirePistol_Implementation(bool bHit, const FHitResult& hitInfo, int32 bc)
 {
+	bulletCount = bc;
+	
 	if (bHit)
 	{
 		// 4. 효과를 재생하고 싶다.
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), gunEffect, hitInfo.Location);
 	}
-}
 
-// bulletCount 변수가 서버에서 변경되면 자동으로 호출되는 콜백 함수
-// -> 클라이언트에서만 호출되는 함수
-void ANetTPSCharacter::OnRep_BulletCount()
-{
 	if (mainUI)
 	{
 		mainUI->PopBullet(bulletCount);
@@ -458,22 +475,7 @@ void ANetTPSCharacter::SetHP(float value)
 	// 체력 감소시키기
 	hp = value;
 
-	// UI Update
-	float percent = hp / maxHP;
-	// 나일경우는 mainUI hp 를 갱신
-	//-> PlayerController 있을 때 mainUI 를 생성한다.
-	if (mainUI)
-	{
-		mainUI->hp = percent;
-	}
-	// 상대방일 경우
-	else
-	{
-		// -> healthbar 를 갖고있는 컴포넌트를 가져와야 한다.
-		// -> 그 컴포넌트에 있는 healthBar hp 를 갱신
-		auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
-		hpUI->hp = percent;
-	}
+	OnRep_HP();
 }
 
 
@@ -519,6 +521,9 @@ void ANetTPSCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	//PrintNetLog();
+
+
+	
 }
 
 void ANetTPSCharacter::PrintNetLog()
@@ -538,7 +543,9 @@ void ANetTPSCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ANetTPSCharacter, bHasPistol);
-	DOREPLIFETIME(ANetTPSCharacter, bulletCount);
+	//DOREPLIFETIME(ANetTPSCharacter, bulletCount);
+
+	DOREPLIFETIME(ANetTPSCharacter, hp);
 }
 
 
