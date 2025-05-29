@@ -168,9 +168,14 @@ public: // ------------ 플레이어 체력 --------------
 public: // ----------- 피격 처리 --------------
 	void DamageProcess();
 
+	// 카메라 쉐이크
+	UPROPERTY(EditDefaultsOnly, Category=CameraShake)
+	TSubclassOf<class UCameraShakeBase> damageCameraShake;
+
 public: // ------------ 죽음 처리 --------------
 	bool isDead = false;
 
+	void DieProcess();
 public: // ---------------- Network -----------------
 	virtual  void Tick(float DeltaSeconds) override;
 	// 네트워크 상태로그 출력함수

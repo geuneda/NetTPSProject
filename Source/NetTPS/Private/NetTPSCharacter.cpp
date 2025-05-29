@@ -104,6 +104,12 @@ ANetTPSCharacter::ANetTPSCharacter()
 		mainUIWidget = tempMainUI.Class;
 	}
 
+	ConstructorHelpers::FClassFinder<UCameraShakeBase> tempCameraShake(TEXT("/Script/Engine.Blueprint'/Game/Net/Blueprints/BP_CameraShake.BP_CameraShake_C'"));
+	if (tempCameraShake.Succeeded())
+	{
+		damageCameraShake = tempCameraShake.Class;
+	}
+
 	ConstructorHelpers::FObjectFinder<UInputAction> tempReloadAction(TEXT("'/Game/Net/Inputs/IA_Reload.IA_Reload'"));
 
 	if (tempReloadAction.Succeeded())
@@ -274,6 +280,15 @@ void ANetTPSCharacter::OnRep_HP()
 		mainUI->hp = percent;
 		// 피격효과 처리
 		mainUI->PlayDamageAnim();
+		// 카메라 쉐으크 처리
+		if (damageCameraShake)
+		{
+			auto pc = Cast<APlayerController>(Controller);
+			if (pc)
+			{
+				pc->ClientStartCameraShake(damageCameraShake);
+			}
+		}
 	}
 	// 상대방일 경우
 	else
@@ -475,6 +490,21 @@ void ANetTPSCharacter::DamageProcess()
 	{
 		isDead = true;
 	}
+}
+
+void ANetTPSCharacter::DieProcess()
+{
+	// -> UI를 화면에 표시
+
+	// -> 화면에 마우스 표시
+	auto pc = Cast<APlayerController>(Controller);
+	if (pc)
+	{
+		pc->SetShowMouseCursor(true);;
+	}
+
+	// 카메라의 채도를 떨어뜨리자.
+	FollowCamera->PostProcessSettings.ColorSaturation = FVector4(0,0,0,1.0f);
 }
 
 void ANetTPSCharacter::SetHP(float value)
