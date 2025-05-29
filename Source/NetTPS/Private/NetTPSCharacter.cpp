@@ -14,6 +14,7 @@
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
 #include "NetTPS.h"
+#include "Components/HorizontalBox.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -102,6 +103,12 @@ ANetTPSCharacter::ANetTPSCharacter()
 	if (tempMainUI.Succeeded())
 	{
 		mainUIWidget = tempMainUI.Class;
+	}
+
+	ConstructorHelpers::FClassFinder<UMainUI> hpUItemp(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/Net/UIs/WBP_HealthBar.WBP_HealthBar_C'"));
+	if (hpUItemp.Succeeded())
+	{
+		hpUIComp->SetWidgetClass(hpUItemp.Class);
 	}
 
 	ConstructorHelpers::FClassFinder<UCameraShakeBase> tempCameraShake(TEXT("/Script/Engine.Blueprint'/Game/Net/Blueprints/BP_CameraShake.BP_CameraShake_C'"));
@@ -225,7 +232,7 @@ void ANetTPSCharacter::InitUIWidget()
 void ANetTPSCharacter::ReloadPistol(const struct FInputActionValue& value)
 {
 	// 총을 갖고 있지 않으면 처리 하지 않는다.
-	// 혹은 이미지 재장전 중일때도 처리하지 않는다.
+	// 혹은 이미 재장전 중일때도 처리하지 않는다.
 	if (bHasPistol == false || isReloading || bulletCount == maxBulletCount)
 	{
 		return;
@@ -271,6 +278,19 @@ void ANetTPSCharacter::InitAmmoUI()
 
 void ANetTPSCharacter::OnRep_HP()
 {
+	if (HP <= 0)
+	{
+		isDead = true;
+
+		ReleasePistol(FInputActionValue());
+
+		// 충돌체 정리
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+		// 못움직이게
+		GetCharacterMovement()->DisableMovement();
+	}
+	
 	// UI Update
 	float percent = hp / maxHP;
 	// 나일경우는 mainUI hp 를 갱신
@@ -280,7 +300,7 @@ void ANetTPSCharacter::OnRep_HP()
 		mainUI->hp = percent;
 		// 피격효과 처리
 		mainUI->PlayDamageAnim();
-		// 카메라 쉐으크 처리
+		// 카메라 쉐이크 처리
 		if (damageCameraShake)
 		{
 			auto pc = Cast<APlayerController>(Controller);
@@ -295,8 +315,13 @@ void ANetTPSCharacter::OnRep_HP()
 	{
 		// -> healthbar 를 갖고있는 컴포넌트를 가져와야 한다.
 		// -> 그 컴포넌트에 있는 healthBar hp 를 갱신
-		auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
-		hpUI->hp = percent;
+		if (hpUIComp)
+		{
+			auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
+			
+			if (hpUI)
+			hpUI->hp = percent;
+		}
 	}
 }
 
@@ -373,7 +398,7 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 void ANetTPSCharacter::ReleasePistol(const struct FInputActionValue& value)
 {
 	// 총을 잡고 있지 않으면 처리 하지 않는다.
-	if (bHasPistol == false || isReloading)
+	if (bHasPistol == false || isReloading || IsLocallyControlled() == false)
 	{
 		return;
 	}
@@ -505,6 +530,8 @@ void ANetTPSCharacter::DieProcess()
 
 	// 카메라의 채도를 떨어뜨리자.
 	FollowCamera->PostProcessSettings.ColorSaturation = FVector4(0,0,0,1.0f);
+
+	mainUI->GameOverUI->SetVisibility(ESlateVisibility::Visible);
 }
 
 void ANetTPSCharacter::SetHP(float value)

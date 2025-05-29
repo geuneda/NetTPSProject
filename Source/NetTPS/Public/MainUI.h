@@ -25,6 +25,16 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	class UUniformGridPanel* BulletPanel;
 
+	// 게임오버
+	UPROPERTY(meta=(BindWidget))
+	class UHorizontalBox* GameOverUI;
+	// 다시하기 버튼
+	UPROPERTY(meta=(BindWidget))
+	class UButton* ButtonRetry;
+	// 나가기 버튼
+	UPROPERTY(meta=(BindWidget))
+	class UButton* ButtonExit;
+
 	UPROPERTY(meta=(BindWidgetAnim), Transient)
 	class UWidgetAnimation* DamageAnim;
 

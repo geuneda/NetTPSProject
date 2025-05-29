@@ -81,4 +81,6 @@ void UNetPlayerAnimInstance::ANimNotify_DieEnd()
 	{
 		player->DieProcess();
 	}
+	
+	player->GetMesh()->SetSimulatePhysics(true);
 }
