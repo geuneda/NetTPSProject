@@ -2,6 +2,8 @@
 
 
 #include "MainUI.h"
+
+#include "Animation/WidgetAnimation.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/Image.h"
 #include "Components/UniformGridPanel.h"
@@ -42,4 +44,12 @@ void UMainUI::PopBullet(int32 index)
 void UMainUI::RemoveAllAmmo()
 {
 	BulletPanel->ClearChildren();
+}
+
+void UMainUI::PlayDamageAnim()
+{
+	if (DamageAnim)
+	{
+		PlayAnimation(DamageAnim);
+	}
 }

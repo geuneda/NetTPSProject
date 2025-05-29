@@ -272,6 +272,8 @@ void ANetTPSCharacter::OnRep_HP()
 	if (mainUI)
 	{
 		mainUI->hp = percent;
+		// 피격효과 처리
+		mainUI->PlayDamageAnim();
 	}
 	// 상대방일 경우
 	else
