@@ -3,8 +3,11 @@
 
 #include "MainUI.h"
 
+#include "NetPlayerController.h"
 #include "Animation/WidgetAnimation.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Button.h"
+#include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "Components/UniformGridPanel.h"
 
@@ -15,6 +18,14 @@ UMainUI::UMainUI(const FObjectInitializer& ObjectInitializer) : Super(ObjectInit
 	{
 		bulletUIFactory = tempBullet.Class;
 	}
+}
+
+void UMainUI::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	ButtonRetry->OnClicked.AddDynamic(this, &UMainUI::OnRetryClicked);
+	ButtonExit->OnClicked.AddDynamic(this, &UMainUI::OnExitClicked);
 }
 
 void UMainUI::ShowCrosshair(bool isShow)
@@ -52,4 +63,20 @@ void UMainUI::PlayDamageAnim()
 	{
 		PlayAnimation(DamageAnim);
 	}
+}
+
+void UMainUI::OnRetryClicked()
+{
+	// 1. UI 안보이도록 처리
+	this->RemoveFromParent();
+	// 서버에 리스폰 요청
+	if (auto pc = Cast<ANetPlayerController>(GetWorld()->GetFirstPlayerController()))
+	{
+		pc->SetShowMouseCursor(false);
+		pc->ServerRPC_RespawnPlayer();
+	}
+}
+
+void UMainUI::OnExitClicked()
+{
 }

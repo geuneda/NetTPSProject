@@ -26,7 +26,7 @@ public:
 	class UUniformGridPanel* BulletPanel;
 
 	// 게임오버
-	UPROPERTY(meta=(BindWidget))
+	UPROPERTY(meta=(BindWidget))   
 	class UHorizontalBox* GameOverUI;
 	// 다시하기 버튼
 	UPROPERTY(meta=(BindWidget))
@@ -44,6 +44,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="HP")
 	float hp = 1.0f;
 public:
+	virtual void NativeConstruct() override;
+	
 	// 크로스헤어 보일지여부 처리 함수
 	void ShowCrosshair(bool isShow);
 
@@ -57,4 +59,12 @@ public:
 
 	// 피격 처리 애니메이션 재생
 	void PlayDamageAnim();
+
+	// Retry 버튼 이벤트 콜백함수
+	UFUNCTION()
+	void OnRetryClicked();
+
+	// Exit 버튼 이벤트 콜백함수
+	UFUNCTION()
+	void OnExitClicked();
 };
