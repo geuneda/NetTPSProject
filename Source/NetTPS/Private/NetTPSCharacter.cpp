@@ -180,6 +180,20 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+void ANetTPSCharacter::PossessedBy(AController* NewController)
+{
+	PRINTLOG(TEXT("Beging"));
+	Super::PossessedBy(NewController);
+	PRINTLOG(TEXT("End"));
+
+	// 내꺼 일때만
+	// InitUIWidget 호출해주자.
+	if (IsLocallyControlled())
+	{
+		InitUIWidget();
+	}
+}
+
 void ANetTPSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -196,12 +210,16 @@ void ANetTPSCharacter::BeginPlay()
 		}
 	}
 
-	InitUIWidget();
+	// 클라이언트고 컨트롤러가 있어야 한다
+	if (IsLocallyControlled() && HasAuthority() == false)
+		InitUIWidget();
 }
 
 // main ui 위젯을 만들어 화면에 표시한다.
 void ANetTPSCharacter::InitUIWidget()
 {
+	PRINTLOG(TEXT("[%s] Begin"), Controller?TEXT("Player") : TEXT("Non-Player"));
+	
 	// 내 캐릭터일 때만 mainUI 만들도록 처리
 	auto pc = Cast<APlayerController>(Controller);
 	if (pc == nullptr)

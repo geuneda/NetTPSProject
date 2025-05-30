@@ -91,6 +91,9 @@ public: // --------- 총잡기 -----------
 	UPROPERTY()
 	TArray<AActor*> pistolActors;
 
+	// Pawn이 PC 한테 Possess 됐을 때 호출되는 함수
+	virtual void PossessedBy(AController* NewController) override;
+
 	virtual void BeginPlay() override;
 	
 	void TakePistol(const struct FInputActionValue& value);
