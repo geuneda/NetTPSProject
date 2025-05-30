@@ -32,6 +32,9 @@ void ANetPlayerController::SeverRPC_ChangeToSpectator_Implementation()
 
 		// 이전 플레이어는 제거
 		player->Destroy();
+
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &ANetPlayerController::ServerRPC_RespawnPlayer_Implementation, 5.0f, false);
 	}
 }
 
