@@ -67,13 +67,13 @@ void UMainUI::PlayDamageAnim()
 
 void UMainUI::OnRetryClicked()
 {
-	// 1. UI 안보이도록 처리
+	// 1. UI 제거
 	this->RemoveFromParent();
 	// 서버에 리스폰 요청
 	if (auto pc = Cast<ANetPlayerController>(GetWorld()->GetFirstPlayerController()))
 	{
 		pc->SetShowMouseCursor(false);
-		pc->ServerRPC_RespawnPlayer();
+		pc->SeverRPC_ChangeToSpectator();
 	}
 }
 

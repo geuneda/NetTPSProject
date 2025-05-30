@@ -24,4 +24,8 @@ public:
 public: // -----------------리스폰 RPC-----------------
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_RespawnPlayer();
+
+public: // -----------------관전자---------------------
+	UFUNCTION(Server, Reliable)
+	void SeverRPC_ChangeToSpectator();
 };
